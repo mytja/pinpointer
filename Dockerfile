@@ -21,4 +21,4 @@ COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/prisma ./prisma
 RUN ulimit -c unlimited
-ENTRYPOINT ["node", "build"]
+ENTRYPOINT "npx prisma migrate deploy && node build"
