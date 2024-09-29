@@ -4,7 +4,6 @@ import prisma from '$lib/prisma/prisma';
 
 async function getUserByToken(cookies: Cookies): Promise<User | null> {
 	const sessionToken = cookies.get('token');
-	console.log(cookies, sessionToken);
 	if (sessionToken === null || sessionToken === undefined) {
 		return null;
 	}
