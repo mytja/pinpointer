@@ -7,7 +7,7 @@ COPY package*.json .
 RUN npm i dotenv
 
 COPY . .
-RUN prisma generate
+RUN npx prisma generate
 RUN npm run build
 RUN npm prune --production
 
