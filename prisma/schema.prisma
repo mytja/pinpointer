@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String                  @id @unique @default(uuid())
+  username           String                  @unique
+  name               String?
+  password           String
+  loginToken         String                  @unique
+  competitions       Competition[]
+  competitors        CompetitionEnrollment[]
+  roundResultHistory RoundPlayerResults[]
+}
+
+model Competition {
+  id          String                  @id @unique @default(uuid())
+  title       String                  @default("")
+  description String                  @default("")
+  private     Boolean                 @default(true)
+  author      User                    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId    String
+  competitors CompetitionEnrollment[]
+  rounds      CompetitionRound[]
+}
+
+model CompetitionEnrollment {
+  id            String      @id @unique @default(uuid())
+  competition   Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  competitionId String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  score         Int
+}
+
+model CompetitionRound {
+  id             String               @id @unique @default(uuid())
+  competition    Competition          @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  competitionId  String
+  roundNumber    Int
+  location       String
+  state          Int                  @default(-1)
+  numberOfRounds Int                  @default(15)
+  startTime      Int                  @default(90)
+  countdown      Int                  @default(15)
+  competitors    RoundPlayerResults[]
+}
+
+model RoundPlayerResults {
+  id      String           @id @unique @default(uuid())
+  round   CompetitionRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  roundId String
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId  String
+  score   Int
+}

@@ -1,0 +1,33 @@
+<!--suppress ES6UnusedImports -->
+<script>
+	import * as Card from '$lib/components/ui/card';
+	import { Button } from '$lib/components/ui/button';
+	import * as Table from '$lib/components/ui/table';
+	import { Input } from '$lib/components/ui/input';
+	import { MapPin } from 'lucide-svelte';
+</script>
+
+<svelte:head>
+	<title>About Pinpointer</title>
+	<meta name="description" content="About Pinpointer" />
+</svelte:head>
+
+<div style="padding: 20px;">
+	<section>
+		<div class="flex h-16 items-center px-4">
+			<MapPin
+				class="h-[50px] w-[50px] rotate-0 scale-100 transition-all"
+			/>
+			<div style="width: 6px"></div>
+			<span style="font-size: 50px">Pinpointer</span>
+		</div>
+		<br>
+		A system for geoguessing tournament organization.
+		<br><br>
+		Copyright 2024 Mitja Ševerkar. All rights reserved. Licensed under AGPLv3.
+	</section>
+</div>
+
+<style>
+
+</style>

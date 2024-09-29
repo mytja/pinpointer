@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "CompetitionRound" ADD COLUMN     "countdown" INTEGER NOT NULL DEFAULT 15,
+ADD COLUMN     "startTime" INTEGER NOT NULL DEFAULT 90;
