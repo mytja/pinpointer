@@ -1,6 +1,7 @@
 import prisma from '$lib/prisma/prisma';
 import { error, redirect } from '@sveltejs/kit';
 import argon2 from 'argon2';
+import crypto from 'crypto';
 
 /** @type {import('./$types').Actions} */
 export const actions = {
@@ -23,7 +24,7 @@ export const actions = {
 			data: {
 				username: username,
 				password: hash,
-				loginToken: ''
+				loginToken: crypto.randomBytes(64).toString('hex')
 			}
 		});
 

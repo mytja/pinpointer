@@ -1,6 +1,7 @@
 import prisma from '$lib/prisma/prisma';
 import getUserByToken from '$lib/prisma/auth';
 import { redirect } from '@sveltejs/kit';
+import crypto from 'crypto';
 
 /** @type {import('./$types').Actions} */
 export const actions = {
@@ -15,7 +16,7 @@ export const actions = {
 				id: user.id
 			},
 			data: {
-				loginToken: ""
+				loginToken: crypto.randomBytes(64).toString('hex')
 			}
 		});
 
