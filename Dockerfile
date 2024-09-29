@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY package*.json .
 
-RUN npm ci && npm i dotenv
+RUN npm i dotenv
 
 COPY . .
 RUN prisma generate
