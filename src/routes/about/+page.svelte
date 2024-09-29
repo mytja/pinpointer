@@ -1,9 +1,5 @@
 <!--suppress ES6UnusedImports -->
 <script>
-	import * as Card from '$lib/components/ui/card';
-	import { Button } from '$lib/components/ui/button';
-	import * as Table from '$lib/components/ui/table';
-	import { Input } from '$lib/components/ui/input';
 	import { MapPin } from 'lucide-svelte';
 </script>
 
