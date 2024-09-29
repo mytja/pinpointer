@@ -28,7 +28,7 @@
 
 	$effect(() => {
 		if (panorama === undefined) return;
-		console.log('novi round detailsi', roundDetails);
+		console.log('novi round detailsi');
 		panorama.setPosition(roundDetails);
 	});
 </script>

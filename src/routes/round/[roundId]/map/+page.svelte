@@ -60,7 +60,7 @@
 	});
 
 	$effect(() => {
-		console.log($roundDetails);
+		//console.log($roundDetails);
 		if ($roundDetails === null) return;
 		if ($roundDetails.round > $roundDetails.totalRounds) {
 			// konec turnirja
