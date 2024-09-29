@@ -5,6 +5,7 @@
 	import Sun from 'lucide-svelte/icons/sun';
 	import Moon from 'lucide-svelte/icons/moon';
 	import MapPin from 'lucide-svelte/icons/map-pin';
+	import { LogOut } from 'lucide-svelte';
 </script>
 
 <header class="hidden flex-col md:flex">
@@ -41,6 +42,14 @@
 					/>
 					<span class="sr-only">Toggle theme</span>
 				</Button>
+				<form action="/logout" method="POST">
+					<Button type="submit" variant="outline" size="icon">
+						<LogOut
+							class="h-[1.2rem] w-[1.2rem]"
+						/>
+						<span class="sr-only">Logout</span>
+					</Button>
+				</form>
 			</div>
 		</div>
 	</div>

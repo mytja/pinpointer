@@ -4,7 +4,7 @@ import prisma from '$lib/prisma/prisma';
 
 async function getUserByToken(cookies: Cookies): Promise<User | null> {
 	const sessionToken = cookies.get('token');
-	if (sessionToken === null || sessionToken === undefined) {
+	if (sessionToken === null || sessionToken === undefined || sessionToken === "") {
 		return null;
 	}
 	return prisma.user.findUnique({
