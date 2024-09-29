@@ -13,7 +13,7 @@ export const actions = {
 			error(400, 'Bad request!');
 		}
 
-		if (password?.length <= 6) {
+		if (password?.length < 5) {
 			error(400, 'Password is too short!');
 		}
 
