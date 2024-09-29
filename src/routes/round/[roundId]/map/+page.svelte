@@ -12,6 +12,7 @@
 	import type { RoundResult } from './types';
 	import { onMount } from 'svelte';
 	import { Loader } from '@googlemaps/js-api-loader';
+	import { env } from '$env/dynamic/public';
 
 	/** @type {import('./$types').PageData} */
 	let { data } = $props();
@@ -73,11 +74,12 @@
 
 	onMount(async () => {
 		const loader = new Loader({
-			apiKey: import.meta.env.VITE_GOOGLE_MAPS_SDK_KEY,
+			apiKey: env.PUBLIC_GOOGLE_MAPS_SDK_KEY,
 			version: 'weekly'
 		});
 		await loader.load();
 		await google.maps.importLibrary('maps') as google.maps.MapsLibrary;
+		await google.maps.importLibrary('marker') as google.maps.MarkerLibrary;
 	});
 </script>
 

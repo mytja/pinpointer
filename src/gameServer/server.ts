@@ -5,6 +5,7 @@ import haversine from 'haversine-distance';
 // @ts-expect-error
 import classifyPoint from 'robust-point-in-polygon';
 import { getRandomNumber } from 'gameServer/random';
+import { env } from '$env/dynamic/private';
 
 type LatLng = { lat: number; lng: number };
 
@@ -217,7 +218,7 @@ export class Round {
 
 			// Check for the nearest Street View
 			const r = await fetch(
-				`https://maps.googleapis.com/maps/api/streetview/metadata?location=${lat},${lng}&key=${import.meta.env.VITE_GOOGLE_MAPS_SDK_KEY}&radius=100000&source=outdoor`
+				`https://maps.googleapis.com/maps/api/streetview/metadata?location=${lat},${lng}&key=${env.GOOGLE_MAPS_SDK_KEY}&radius=100000&source=outdoor`
 			);
 			const json = await r.json();
 			if (json.status === 'ZERO_RESULTS') {

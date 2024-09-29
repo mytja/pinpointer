@@ -4,6 +4,7 @@
 	import type { RoundResult } from './types';
 	import { Button } from '$lib/components/ui/button';
 	import sanitizeHtml from 'sanitize-html';
+	import { env } from '$env/dynamic/public';
 
 	interface MyProps {
 		isOwner: boolean;
@@ -14,19 +15,14 @@
 
 	let { isOwner, roundResults, hideRoundDetails, roundId }: MyProps = $props();
 
-	let markers: google.maps.AdvancedMarkerElement[] = [];
-
+	let markers: google.maps.marker.AdvancedMarkerElement[] = [];
 	let map: google.maps.Map | undefined;
 
 	onMount(async () => {
-		const {
-			AdvancedMarkerElement,
-			PinElement
-		} = await google.maps.importLibrary('marker') as google.maps.MarkerLibrary;
 		map = new google.maps.Map(document.getElementById('results-map') as HTMLElement, {
 			center: { lat: 0.000, lng: 0.000 },
 			zoom: 1,
-			mapId: import.meta.env.VITE_GOOGLE_MAPS_MARKER_MAP_ID,
+			mapId: env.PUBLIC_GOOGLE_MAPS_MARKER_MAP_ID,
 			mapTypeControl: false,
 			streetViewControl: false,
 			fullscreenControl: true,
@@ -72,46 +68,21 @@
 		}
 		markers = [];
 
-		google.maps.importLibrary('marker').then(({AdvancedMarkerElement, PinElement}) => {
-			for (let m = 0; m < roundResults.length; m++) {
-				const roundResult = roundResults[m];
-				console.log('Round results', roundResult);
-				if (roundResult.userId === 'solution') {
-					const pinBackground = new PinElement({
-						background: '#FBBC04'
-					});
-					const infowindow = new google.maps.InfoWindow({
-						content: `<div class="username">Solution</div>`,
-					});
-					const marker = new AdvancedMarkerElement({
-						map,
-						position: roundResult.latLng,
-						title: `Solution`,
-						content: pinBackground.element
-					});
-					infowindow.open({
-						anchor: marker,
-						map,
-					});
-					marker.addListener("click", () => {
-						infowindow.open({
-							anchor: marker,
-							map,
-						});
-					});
-					map!.panTo(roundResult.latLng!);
-					map!.setZoom(7);
-					markers.push(marker);
-					continue;
-				}
-				if (roundResult.latLng === null) continue;
-				const infowindow = new google.maps.InfoWindow({
-					content: `<div class="username">` + sanitizeHtml(`${roundResult.username}`) + `</div>` + sanitizeHtml(`<b>${Math.round(roundResult.distance / 100) / 10}km</b><br><b>${roundResult.addedScore}</b> points</div>`),
+		for (let m = 0; m < roundResults.length; m++) {
+			const roundResult = roundResults[m];
+			console.log('Round results', roundResult);
+			if (roundResult.userId === 'solution') {
+				const pinBackground = new google.maps.marker.PinElement({
+					background: '#FBBC04'
 				});
-				const marker = new AdvancedMarkerElement({
+				const infowindow = new google.maps.InfoWindow({
+					content: `<div class="username">Solution</div>`,
+				});
+				const marker = new google.maps.marker.AdvancedMarkerElement({
 					map,
 					position: roundResult.latLng,
-					title: `${roundResult.username}; ${roundResult.distance}km, ${roundResult.addedScore} points`
+					title: `Solution`,
+					content: pinBackground.element
 				});
 				infowindow.open({
 					anchor: marker,
@@ -123,15 +94,38 @@
 						map,
 					});
 				});
+				map!.panTo(roundResult.latLng!);
+				map!.setZoom(7);
 				markers.push(marker);
+				continue;
 			}
-			const bounds = new google.maps.LatLngBounds();
-			for (let m = 0; m < markers.length; m++) {
-				const marker = markers[m];
-				bounds.extend(marker);
-			}
-			map!.fitBounds(bounds);
-		});
+			if (roundResult.latLng === null) continue;
+			const infowindow = new google.maps.InfoWindow({
+				content: `<div class="username">` + sanitizeHtml(`${roundResult.username}`) + `</div>` + sanitizeHtml(`<b>${Math.round(roundResult.distance / 100) / 10}km</b><br><b>${roundResult.addedScore}</b> points</div>`),
+			});
+			const marker = new google.maps.marker.AdvancedMarkerElement({
+				map,
+				position: roundResult.latLng,
+				title: `${roundResult.username}; ${roundResult.distance}km, ${roundResult.addedScore} points`
+			});
+			infowindow.open({
+				anchor: marker,
+				map,
+			});
+			marker.addListener("click", () => {
+				infowindow.open({
+					anchor: marker,
+					map,
+				});
+			});
+			markers.push(marker);
+		}
+		const bounds = new google.maps.LatLngBounds();
+		for (let m = 0; m < markers.length; m++) {
+			const marker = markers[m];
+			bounds.extend(marker);
+		}
+		map!.fitBounds(bounds);
 	});
 </script>
 

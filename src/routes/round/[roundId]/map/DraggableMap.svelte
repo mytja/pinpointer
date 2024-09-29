@@ -5,6 +5,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import type { RoundResult } from './types';
 	const {Loader} = pkg;
+	import { env } from '$env/dynamic/public';
 
 	interface MyProps {
 		guess: {lat: number; lng: number};
@@ -83,7 +84,7 @@
 		map = new google.maps.Map(document.getElementById("map") as HTMLElement, {
 			center: { lat: 0.000, lng: 0.000 },
 			zoom: 1,
-			mapId: import.meta.env.VITE_GOOGLE_MAPS_MARKER_MAP_ID,
+			mapId: env.PUBLIC_GOOGLE_MAPS_MARKER_MAP_ID,
 			mapTypeControl: false,
 			streetViewControl: false,
 			fullscreenControl: true,
