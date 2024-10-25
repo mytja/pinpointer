@@ -93,3 +93,8 @@
 .username {
     font-size: 1.25em;
 }
+
+a[aria-label="Open this area in Google Maps (opens a new window)"] {
+    pointer-events: none !important;
+    cursor: default !important;
+}
