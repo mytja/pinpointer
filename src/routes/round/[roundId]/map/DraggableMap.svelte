@@ -17,6 +17,7 @@
 	let locked = $state(false);
 
 	const ZOOM_TO = 8;
+	const ZOOM_ENABLED = false;
 
 	let posX = $state(0);
 	let posY = $state(0);
@@ -102,7 +103,7 @@
 				marker.position = e.latLng;
 			}
 			map!.panTo(e.latLng!);
-			if (map!.getZoom()! < ZOOM_TO) {
+			if (map!.getZoom()! < ZOOM_TO && ZOOM_ENABLED) {
 				map!.setZoom(ZOOM_TO);
 			}
 			let fd = new FormData();
@@ -117,7 +118,7 @@
 		console.log("guess", guess);
 		marker.position = guess;
 		map.panTo(guess);
-		if (map.getZoom()! < ZOOM_TO) {
+		if (map.getZoom()! < ZOOM_TO && ZOOM_ENABLED) {
 			map.setZoom(ZOOM_TO);
 		}
 	})
