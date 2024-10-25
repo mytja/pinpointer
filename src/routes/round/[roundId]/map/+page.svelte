@@ -72,6 +72,8 @@
 		}
 	});
 
+	let loadedGoogleMaps = $state(false);
+
 	onMount(async () => {
 		const loader = new Loader({
 			apiKey: env.PUBLIC_GOOGLE_MAPS_SDK_KEY,
@@ -80,6 +82,7 @@
 		await loader.load();
 		await google.maps.importLibrary('maps') as google.maps.MapsLibrary;
 		await google.maps.importLibrary('marker') as google.maps.MarkerLibrary;
+		loadedGoogleMaps = true;
 	});
 </script>
 
@@ -88,6 +91,13 @@
 	<meta name="description" content="Pinpointer map" />
 </svelte:head>
 
+{#if !loadedGoogleMaps}
+	<div style="padding: 20px;">
+		<section>
+			<h2 class="scroll-m-20 text-3xl font-bold tracking-tight">Google Maps SDK is loading... This shouldn't take more than a few seconds.</h2>
+		</section>
+	</div>
+{:else}
 {#if $roundDetails !== null}
 	<ResultsMap isOwner={data.isOwner} roundResults={$roundResults} hideRoundDetails={hideRoundDetails}
 							roundId={data.roundId} />
@@ -132,6 +142,7 @@
 			{/if}
 		</section>
 	</div>
+{/if}
 {/if}
 
 <style>
