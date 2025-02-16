@@ -272,6 +272,12 @@ export class Round {
 	}
 
 	async newRound() {
+		if (this.timer > 0) {
+			// Next round has already been started
+			// Prevents spam clicking the "Next game" button
+			return;
+		}
+		this.timer = this.startTime;
 		this.state++;
 		if (this.state > this.requiredRoundNumber) {
 			await prisma.competitionRound.update({
@@ -297,7 +303,6 @@ export class Round {
 		}
 		this.resetClients();
 		await this.randomPlace();
-		this.timer = this.startTime;
 		this.timerFunction = setInterval(async () => {
 			if (this.timerFunction === null) {
 				return;
