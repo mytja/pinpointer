@@ -2,7 +2,7 @@ import prisma from '$lib/prisma/prisma';
 import { error, redirect } from '@sveltejs/kit';
 import getUserByToken from '$lib/prisma/auth';
 import { Round, rounds } from 'gameServer/server';
-import { nanoid } from 'nanoid';
+import { customAlphabet, nanoid } from 'nanoid';
 
 /** @type {import('./$types').Actions} */
 export const actions = {
@@ -22,7 +22,15 @@ export const actions = {
 			error(400, 'Bad request!');
 		}
 
-		const roundId = nanoid(10);
+		const nanoid = customAlphabet('1234567890abcdefghijklmnoprstqrstuvwxyz', 10)
+		let roundId = "";
+		while (true) {
+			roundId = nanoid(4);
+			if (rounds[roundId] !== undefined && rounds[roundId] !== null) {
+				continue;
+			}
+			break;
+		}
 
 		rounds[roundId] = new Round(
 			roundId,
@@ -30,7 +38,7 @@ export const actions = {
 			location === '' ? 'World' : location,
 			startTime,
 			countdown,
-			user.id,
+			user?.id,
 			false,
 		);
 		await rounds[roundId].initialize();

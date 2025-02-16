@@ -109,7 +109,6 @@
 						<Card.Title>Time remaining ({$time.time}s) – {$roundDetails.round}/{$roundDetails.totalRounds}</Card.Title>
 						<Card.Description>
 							{#if data.isTournament}Tournament game{:else}Friendly game{/if}
-							<br>
 							<Progress value={($time.time * 100) / data.startTime} />
 						</Card.Description>
 						<Card.Content>
@@ -124,12 +123,16 @@
 			{/if}
 		</div>
 		<StreetView roundDetails={$roundDetails} />
-		<DraggableMap roundId={data.roundId} guess={$guess} roundResults={$roundResults} />
+		<DraggableMap roundId={data.roundId} guess={$guess} roundResults={$roundResults} roundDetails={$roundDetails} />
 	</div>
 {:else}
 	<div style="padding: 20px;">
 		<section>
 			<h2 class="scroll-m-20 text-3xl font-bold tracking-tight">Waiting for start</h2>
+			{#if !data.isTournament}
+				Invite your friends with this code: <span style="font-size: 32px; font-weight: bold; color: darkgrey;">{data.roundId}</span>
+				<br><br>
+			{/if}
 			{#each $clients as client}
 				{client.username}<br>
 			{/each}

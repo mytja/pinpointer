@@ -6,6 +6,8 @@
 
 	/** @type {import('./$types').PageData} */
 	export let data;
+
+	let roundId = "";
 </script>
 
 <svelte:head>
@@ -21,6 +23,11 @@
 
 		<br>
 		<Button href="/quick">Create a quick match</Button>
+		<br><br>
+		<div class="inline-block" style="width: 100%;">
+			<Input type="text" bind:value={roundId} name="username" placeholder="Join a quick match with an invite code" class="max-w-xl inline" />
+			<Button href="/round/{roundId}/map" class="inline">Join a quick match</Button>
+		</div>
 
 		<br><br>
 		<hr>

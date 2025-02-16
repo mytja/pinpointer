@@ -46,7 +46,7 @@ export class Round {
 		this.boundaryBox = [];
 		this.clients = {};
 		this.currentLocation = null;
-		this.timer = startTime;
+		this.timer = 0;
 		this.startTime = startTime;
 		this.timerFunction = null;
 		this.pressuredTimer = pressuredTimer;
@@ -409,6 +409,7 @@ export class Round {
 		console.log('Broadcasting results', results);
 
 		this.broadcast('roundResults', JSON.stringify(results));
+		this.timer = 0;
 	}
 
 	initPressuredTimer() {
