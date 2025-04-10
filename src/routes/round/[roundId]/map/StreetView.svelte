@@ -1,9 +1,10 @@
 <script lang="ts">
 	/* eslint-disable no-undef */
 	import { onMount } from 'svelte';
+	import type { Readable } from 'svelte/store';
 
 	interface MyProps {
-		roundDetails: { lat: number, lng: number };
+		roundDetails: Readable<{ lat: number, lng: number }>;
 	};
 	let { roundDetails }: MyProps = $props();
 
@@ -13,7 +14,7 @@
 		panorama = new google.maps.StreetViewPanorama(
 			document.getElementById('street-view-map') as HTMLElement,
 			{
-				position: roundDetails,
+				position: $roundDetails,
 				addressControl: false,
 				fullscreenControl: false,
 				disableDoubleClickZoom: true,
@@ -23,13 +24,13 @@
 				panControl: false
 			}
 		);
-		panorama.setPosition(roundDetails);
+		panorama.setPosition($roundDetails);
 	});
 
-	$effect(() => {
+	roundDetails.subscribe((value) => {
 		if (panorama === undefined) return;
 		console.log('novi round detailsi');
-		panorama.setPosition(roundDetails);
+		panorama.setPosition(value);
 	});
 </script>
 

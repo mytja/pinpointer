@@ -49,27 +49,24 @@
 	let hideRoundDetails: boolean = $state(true);
 	let results: RoundResult[] = $state([]);
 
-	roundDetails.subscribe(() => {
+	roundDetails.subscribe((value) => {
 		console.log('Clearing details');
-		hideRoundDetails = true;
-	});
-	roundResults.subscribe((value) => {
-		hideRoundDetails = false;
-		results = value;
-		console.log(value);
-	});
-
-	$effect(() => {
-		//console.log($roundDetails);
-		if ($roundDetails === null) return;
-		if ($roundDetails.round > $roundDetails.totalRounds) {
+		if (value === null) return;
+		if (value.round > value.totalRounds) {
 			// konec turnirja
 			if (data.competitionId === "") {
 				window.location.href = `/`;
 				return;
 			}
 			window.location.href = `/competition/${data.competitionId}`;
+			return;
 		}
+		hideRoundDetails = true;
+	});
+	roundResults.subscribe((value) => {
+		hideRoundDetails = false;
+		results = value;
+		console.log(value);
 	});
 
 	let loadedGoogleMaps = $state(false);
@@ -122,8 +119,8 @@
 				</Card.Root>
 			{/if}
 		</div>
-		<StreetView roundDetails={$roundDetails} />
-		<DraggableMap roundId={data.roundId} guess={$guess} roundResults={$roundResults} roundDetails={$roundDetails} />
+		<StreetView roundDetails={roundDetails} />
+		<DraggableMap roundId={data.roundId} guess={$guess} roundResults={roundResults} />
 	</div>
 {:else}
 	<div style="padding: 20px;">

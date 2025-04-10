@@ -6,14 +6,14 @@
 	import type { RoundResult } from './types';
 	const {Loader} = pkg;
 	import { env } from '$env/dynamic/public';
+	import type { Readable } from 'svelte/store';
 
 	interface MyProps {
 		guess: {lat: number; lng: number};
 		roundId: string;
-		roundResults: RoundResult[];
-		roundDetails: { lat: number, lng: number }[];
+		roundResults: Readable<RoundResult[]>;
 	}
-	let { guess, roundId, roundResults, roundDetails }: MyProps = $props();
+	let { guess, roundId, roundResults }: MyProps = $props();
 
 	let locked = $state(false);
 
@@ -125,16 +125,15 @@
 	})
 
 	// reset za novo rundo
-	$effect(() => {
-		Object.values(roundResults);
-		console.log("round results draggable", roundResults, map, marker);
+	roundResults.subscribe((value) => {
+		console.log("round results draggable", value, map, marker);
 		if (map === undefined || marker === null) return;
 		map!.panTo({ lat: 0.000, lng: 0.000 });
 		map!.setZoom(1);
 		marker.setMap(null);
 		marker = null;
 		locked = false;
-	})
+	});
 </script>
 
 <div
