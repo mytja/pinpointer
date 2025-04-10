@@ -12,11 +12,14 @@ export const actions = {
 
 		const data = await request.formData();
 		const name = data.get('name')?.toString();
-		const description = data.get('description')?.toString();
+		let description = data.get('description')?.toString();
 		const isPrivate = data.get('private') === 'on';
 
-		if (name === undefined || name === '' || description === undefined || description === '') {
+		if (name === undefined || name === '') {
 			error(400, 'Bad request!');
+		}
+		if (description === undefined) {
+			description = "";
 		}
 
 		const competition = await prisma.competition.create({
