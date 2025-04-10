@@ -20,7 +20,8 @@
 		<br>
 		A system for geoguessing tournament organization.
 		<br><br>
-		Copyright 2024 Mitja Ševerkar. All rights reserved. Licensed under AGPLv3.
+		Copyright 2024-2025 Mitja Ševerkar. All rights reserved. Licensed under AGPLv3.
+		Source code is available on <a href="https://github.com/mytja/pinpointer" style="color: cadetblue;">GitHub</a>.
 	</section>
 </div>
 
