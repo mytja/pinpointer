@@ -357,19 +357,15 @@ export class Round {
 				continue;
 			}
 			const scoreBefore = client.score;
-			const result = haversine(client.lastGuess, this.currentLocation);
-			const reduction = result * distanceReductionPerMeter;
-			console.log("Reduction for client", key, reduction, result);
-			const score = Math.round(
-				Math.pow(Math.max(0, (1000 - reduction) / 1000), 2) * 1000
-			);
+			const distance = haversine(client.lastGuess, this.currentLocation);
+			const score = Math.round(5000 * Math.pow(Math.E, -10 * (distance / mapDistance)));
 			this.clients[key].score += score;
 			results.push({
 				userId: key,
 				username: client.username,
 				scoreBefore: scoreBefore,
 				addedScore: score,
-				distance: result,
+				distance: distance,
 				newScore: this.clients[key].score,
 				latLng: client.lastGuess
 			});
