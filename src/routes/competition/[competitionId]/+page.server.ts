@@ -200,24 +200,45 @@ export async function load({ cookies, params }) {
 	type ExtendedCompetitors = typeof competitors & { rounds: Round[] }[];
 	const competitorsJson: ExtendedCompetitors = competitors as ExtendedCompetitors;
 
+	const bestPerformers: number[] = [];
+	for (let i = 0; i < rounds.length; i++) {
+		bestPerformers.push(-1);
+		for (let r = 0; r < rounds[i].competitors.length; r++) {
+			bestPerformers[i] = Math.max(rounds[i].competitors[r].score, bestPerformers[i]);
+		}
+	}
+
 	for (let c = 0; c < competitorsJson.length; c++) {
 		competitorsJson[c].rounds = [];
 		for (let i = 0; i < rounds.length; i++) {
 			competitorsJson[c].rounds.push(null);
+			competitorsJson[c].normalizedScore = 0;
 			for (let r = 0; r < rounds[i].competitors.length; r++) {
 				const competitor = rounds[i].competitors[r];
 				if (competitor.userId !== competitorsJson[c].userId) {
 					continue;
 				}
+				if (bestPerformers[i] === competitor.score) {
+					// @ts-expect-error - The competitor object type doesn't include isBestPerformer property, but we need to add it dynamically to track best scores
+					competitor.isBestPerformer = true;
+				}
+				competitor.normalized = Math.round(rounds[i].numberOfRounds * 5000 * competitor.score / bestPerformers[i]);
+				competitorsJson[c].normalizedScore += competitor.normalized;
 				competitorsJson[c].rounds[i] = competitor;
 			}
 		}
+	}
+
+	let totalRounds = 0;
+	for (let i = 0; i < rounds.length; i++) {
+		totalRounds += rounds[i].numberOfRounds;
 	}
 
 	return {
 		isOwner: competition.authorId === user.id,
 		competition: competition,
 		competitors: competitorsJson,
-		rounds: rounds
+		rounds: rounds,
+		totalRounds: totalRounds
 	};
 }

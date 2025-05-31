@@ -9,6 +9,23 @@
 	export let data;
 </script>
 
+<style>
+	.subscripted {
+			font-size: 0.9em;
+			font-weight: normal;
+			color: lightgray;
+			padding-left: 5px;
+	}
+
+	.mega {
+			font-size: 1.5em;
+	}
+
+	.bold {
+			font-weight: bold;
+	}
+</style>
+
 <svelte:head>
 	<title>Home</title>
 	<meta name="description" content="Pinpointer home" />
@@ -42,6 +59,7 @@
 							<Table.Head>Round {round.roundNumber}</Table.Head>
 						{/each}
 						<Table.Head>Total points</Table.Head>
+						<Table.Head>Normalized point value</Table.Head>
 						{#if data.isOwner}
 							<Table.Head>Remove user</Table.Head>
 						{/if}
@@ -58,10 +76,11 @@
 								{#if round === null}
 									<Table.Cell></Table.Cell>
 								{:else}
-									<Table.Cell>{round.score}</Table.Cell>
+									<Table.Cell><span class="mega">{round.score}</span><span class="subscripted">({round.normalized})</span></Table.Cell>
 								{/if}
 							{/each}
-							<Table.Cell><b>{competitor.score}</b></Table.Cell>
+							<Table.Cell><span class="mega bold">{competitor.score}</span></Table.Cell>
+							<Table.Cell><span class="mega bold">{competitor.normalizedScore}</span><span class="subscripted">/{5000 * data.totalRounds}</span></Table.Cell>
 							{#if data.isOwner}
 								<Table.Cell>
 									<form action="?/removeUser" method="post">
@@ -145,7 +164,3 @@
 		{/if}
 	</section>
 </div>
-
-<style>
-
-</style>
