@@ -10,8 +10,9 @@
 		guess: {lat: number; lng: number};
 		roundId: string;
 		roundResults: Readable<RoundResult[]>;
+		boundaryBox: number[];
 	}
-	let { guess, roundId, roundResults }: MyProps = $props();
+	let { guess, roundId, roundResults, boundaryBox }: MyProps = $props();
 
 	let locked = $state(false);
 
@@ -90,6 +91,7 @@
 			fullscreenControl: true,
 			zoomControl: true,
 		});
+		fitToBBox();
 
 		// HACKY AS FUCK
 		// FUCK EM BROWSERS
@@ -137,12 +139,19 @@
 		}
 	})
 
+	function fitToBBox() {
+		const bounds = new google.maps.LatLngBounds();
+		console.log("bbox", boundaryBox);
+		bounds.extend({lat: boundaryBox[1], lng: boundaryBox[0]});
+		bounds.extend({lat: boundaryBox[3], lng: boundaryBox[2]});
+		map!.fitBounds(bounds);
+	}
+
 	// reset za novo rundo
 	roundResults.subscribe((value) => {
 		console.log("round results draggable", value, map, marker);
 		if (map === undefined || marker === null) return;
-		map!.panTo({ lat: 0.000, lng: 0.000 });
-		map!.setZoom(1);
+		fitToBBox();
 		marker.map = null;
 		marker = null;
 		locked = false;

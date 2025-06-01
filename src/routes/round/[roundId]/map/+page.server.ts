@@ -61,5 +61,6 @@ export async function load({ cookies, params }) {
 		canMove: rounds[roundId].canMove,
 		canRotate: rounds[roundId].canRotate,
 		canZoom: rounds[roundId].canZoom,
+		boundaryBox: rounds[roundId].boundaryBox,
 	};
 }

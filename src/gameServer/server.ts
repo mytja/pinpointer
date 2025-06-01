@@ -221,10 +221,10 @@ export class Round {
 		}
 
 		const boundaryBoxSize = haversine(
-			{ lat: this.boundaryBox[0], lng: this.boundaryBox[1] },
+			{ lng: this.boundaryBox[0], lat: this.boundaryBox[1] },
 			{
-				lat: this.boundaryBox[2],
-				lng: this.boundaryBox[3]
+				lng: this.boundaryBox[2],
+				lat: this.boundaryBox[3]
 			}
 		) / 20000000;
 		const searchRadius = Math.round(boundaryBoxSize * 80000);
@@ -423,7 +423,7 @@ export class Round {
 			addedScore: -1,
 			distance: -1,
 			newScore: -1,
-			latLng: this.currentLocation
+			latLng: this.currentLocation,
 		});
 
 		console.log('Broadcasting results', results);

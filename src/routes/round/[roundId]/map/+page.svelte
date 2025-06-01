@@ -49,7 +49,6 @@
 	);
 
 	let hideRoundDetails: boolean = $state(true);
-	let results: RoundResult[] = $state([]);
 
 	time.subscribe((value) => {
 		if (value === null) return;
@@ -77,7 +76,6 @@
 			document.exitFullscreen();
 		} catch { /* empty */ }
 		hideRoundDetails = false;
-		results = value;
 		console.log(value);
 	});
 
@@ -89,9 +87,8 @@
 			apiKey: env.PUBLIC_GOOGLE_MAPS_SDK_KEY,
 			version: 'weekly'
 		});
-		await loader.load();
-		await google.maps.importLibrary('maps') as google.maps.MapsLibrary;
-		await google.maps.importLibrary('marker') as google.maps.MarkerLibrary;
+		await loader.importLibrary('maps') as google.maps.MapsLibrary;
+		await loader.importLibrary('marker') as google.maps.MarkerLibrary;
 		loadedGoogleMaps = true;
 	});
 </script>
@@ -135,7 +132,7 @@
 			</div>
 		</div>
 		<StreetView roundDetails={roundDetails} reset={reset} canMove={data.canMove} canRotate={data.canRotate} canZoom={data.canZoom} />
-		<DraggableMap roundId={data.roundId} guess={$guess} roundResults={roundResults} />
+		<DraggableMap roundId={data.roundId} guess={$guess} roundResults={roundResults} boundaryBox={data.boundaryBox} />
 	</div>
 {:else}
 	<div style="padding: 20px;">
