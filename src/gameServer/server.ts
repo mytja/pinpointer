@@ -91,6 +91,7 @@ export class Round {
 		}
 		this.clients[userId].guessLocked = true;
 		this.clients[userId].send('guess', JSON.stringify(this.clients[userId].lastGuess));
+		this.sendClients(true);
 		if (this.pressuredTimer !== -1) {
 			this.initPressuredTimer();
 		}
@@ -100,6 +101,7 @@ export class Round {
 			const client = this.clients[clientId];
 			clients++;
 			if (client.guessLocked) lockedClients++;
+			else break;
 		}
 		if (clients === lockedClients) {
 			// predčasno končajmo timer
@@ -107,13 +109,17 @@ export class Round {
 		}
 	}
 
-	sendClients() {
+	sendClients(sortByScore = false) {
 		const j = [];
 		for (const key in this.clients) {
 			const client = this.clients[key];
-			j.push({ id: key, username: client.username });
+			j.push({ id: key, username: client.username, locked: client.guessLocked, score: client.score });
 		}
-		j.sort((a, b) => a.username.localeCompare(b.username));
+		if (sortByScore) {
+			j.sort((a, b) => (a.score < b.score) ? 1 : -1);
+		} else {
+			j.sort((a, b) => a.username.localeCompare(b.username));
+		}
 		this.broadcast('clients', JSON.stringify(j));
 	}
 
@@ -205,6 +211,16 @@ export class Round {
 			throw Error("Polygon hasn't been initialized yet!");
 		}
 
+		const boundaryBoxSize = haversine(
+			{ lat: this.boundaryBox[0], lng: this.boundaryBox[1] },
+			{
+				lat: this.boundaryBox[2],
+				lng: this.boundaryBox[3]
+			}
+		) / 20000000;
+		let searchRadius = Math.round(boundaryBoxSize * 80000);
+		console.log("BBOX SIZE: ", boundaryBoxSize, "SEARCH RADIUS: ", searchRadius);
+
 		while (true) {
 			const lng = getRandomNumber(this.boundaryBox[0], this.boundaryBox[2]);
 			const lat = getRandomNumber(this.boundaryBox[1], this.boundaryBox[3]);
@@ -218,7 +234,7 @@ export class Round {
 
 			// Check for the nearest Street View
 			const r = await fetch(
-				`https://maps.googleapis.com/maps/api/streetview/metadata?location=${lat},${lng}&key=${env.GOOGLE_MAPS_SDK_KEY}&radius=100000&source=outdoor`
+				`https://maps.googleapis.com/maps/api/streetview/metadata?location=${lat},${lng}&key=${env.GOOGLE_MAPS_SDK_KEY}&radius=${searchRadius}&source=outdoor`
 			);
 			const json = await r.json();
 			if (json.status === 'ZERO_RESULTS') {
@@ -272,6 +288,7 @@ export class Round {
 	}
 
 	async newRound() {
+		console.log("Starting new round");
 		if (this.timer > 0) {
 			// Next round has already been started
 			// Prevents spam clicking the "Next game" button
@@ -302,6 +319,7 @@ export class Round {
 			});
 		}
 		this.resetClients();
+		this.sendClients(true);
 		await this.randomPlace();
 		this.timerFunction = setInterval(async () => {
 			if (this.timerFunction === null) {
@@ -335,11 +353,6 @@ export class Round {
 					lng: this.boundaryBox[3]
 				}
 			);
-		const dd = Math.pow(mapDistance, 0.9);
-		// 1000 points
-		const distanceReductionPerMeter = 1000 / dd;
-
-		console.log("reduction", distanceReductionPerMeter, dd);
 
 		const results = [];
 		for (const key in this.clients) {

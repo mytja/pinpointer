@@ -5,6 +5,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import sanitizeHtml from 'sanitize-html';
 	import { env } from '$env/dynamic/public';
+	import type { Readable } from 'svelte/store';
 
 	interface MyProps {
 		isOwner: boolean;
@@ -17,6 +18,7 @@
 
 	let markers: google.maps.marker.AdvancedMarkerElement[] = [];
 	let map: google.maps.Map | undefined;
+	let results = $state<RoundResult[] | null>([]); // svelte 5 fucking hackery
 
 	onMount(async () => {
 		map = new google.maps.Map(document.getElementById('results-map') as HTMLElement, {
@@ -59,6 +61,8 @@
 
 	$effect(() => {
 		console.log("Updating markers", roundResults, map);
+		roundResults = roundResults;
+		results = JSON.parse(JSON.stringify(roundResults));
 
 		if (map === undefined || roundResults === null) return;
 
@@ -123,19 +127,59 @@
 		const bounds = new google.maps.LatLngBounds();
 		for (let m = 0; m < markers.length; m++) {
 			const marker = markers[m];
-			bounds.extend(marker);
+			if (marker.position === null) continue;
+			if (marker.position === undefined) continue;
+			bounds.extend(marker.position);
 		}
 		map!.fitBounds(bounds);
 	});
 </script>
 
+<style>
+	table {
+      table-layout: fixed;
+			text-align: center;
+	}
+</style>
+
 <div style="display:flex; justify-content:center; align-items:center; flex-direction: column; visibility: {hideRoundDetails ? 'hidden' : 'visible'}">
 	<div
 		style="width: 100vw; height: 100%; z-index: 50; position: absolute; top: 0; left: 0; overflow: hidden; padding: 20px;"
 		class="bg-card">
-		<h1 style="font-size: 2em;">Results</h1>
 		<div style="height: 12px;"></div>
-		<div id="results-map" style="height: 80vh; width: 80vw;"></div>
+		<div style="display: flex; flex-direction: row;">
+			<div id="results-map" style="height: 85vh; min-width: 60vw;"></div>
+			<div style="flex-grow: 1; height: 85vh; padding-left: 20px;">
+				<span style="font-size: 2em;">Results</span>
+				<br><br>
+				<table class="striped" style="width: 100%;">
+					<thead>
+					<tr>
+						<th scope="col">Username</th>
+						<th scope="col">Distance</th>
+						<th scope="col">Score before</th>
+						<th scope="col">Points received</th>
+						<th scope="col">Total points</th>
+					</tr>
+					</thead>
+					<tbody>
+					{#if results !== null}
+						{#each results as roundResult}
+							{#if roundResult.userId !== 'solution'}
+								<tr>
+									<th scope="row">@{roundResult.username}</th>
+									<td>{#if roundResult.distance === -1}❌{:else}{Math.round(roundResult.distance * 100) / 100} m{/if}</td>
+									<td>{roundResult.scoreBefore}</td>
+									<td>{roundResult.addedScore}</td>
+									<td>{roundResult.newScore}</td>
+								</tr>
+							{/if}
+						{/each}
+					{/if}
+					</tbody>
+				</table>
+			</div>
+		</div>
 		{#if isOwner}
 			<div style="height: 12px;"></div>
 			<Button on:click={async () => {

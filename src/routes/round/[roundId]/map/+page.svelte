@@ -17,6 +17,8 @@
 	/** @type {import('./$types').PageData} */
 	let { data } = $props();
 
+	const audio = new Audio('/beep.mp3');
+
 	const s = source(`/round/${data.roundId}/client`);
 	const clients = s.select('clients').json(
 		function or({ previous }) {
@@ -49,6 +51,12 @@
 	let hideRoundDetails: boolean = $state(true);
 	let results: RoundResult[] = $state([]);
 
+	time.subscribe((value) => {
+		if (value === null) return;
+		if (value.time <= 0) return;
+		if (value.time <= 10) audio.play();
+	})
+
 	roundDetails.subscribe((value) => {
 		console.log('Clearing details');
 		if (value === null) return;
@@ -63,13 +71,18 @@
 		}
 		hideRoundDetails = true;
 	});
+
 	roundResults.subscribe((value) => {
+		try {
+			document.exitFullscreen();
+		} catch { /* empty */ }
 		hideRoundDetails = false;
 		results = value;
 		console.log(value);
 	});
 
 	let loadedGoogleMaps = $state(false);
+	let reset = writable<number>(0);
 
 	onMount(async () => {
 		const loader = new Loader({
@@ -99,27 +112,29 @@
 	<ResultsMap isOwner={data.isOwner} roundResults={$roundResults} hideRoundDetails={hideRoundDetails}
 							roundId={data.roundId} />
 	<div class="map-page">
-		<div style="position: absolute; top: 5px; right: 5px; z-index: 10; width: 300px;">
-			{#if $time !== null}
-				<Card.Root style={($time.time * 100) / data.startTime <= 15 ? "border-color: red; border-width: 5px;" : ""}>
-					<Card.Header>
-						<Card.Title>Time remaining ({$time.time}s) – {$roundDetails.round}/{$roundDetails.totalRounds}</Card.Title>
-						<Card.Description>
-							{#if data.isTournament}Tournament game{:else}Friendly game{/if}
-							<Progress value={($time.time * 100) / data.startTime} />
-						</Card.Description>
-						<Card.Content>
-							{#each results as result}
-								{#if result.username !== "Solution"}
-									<b>@{result.username}</b> – {result.newScore}<br>
-								{/if}
-							{/each}
-						</Card.Content>
-					</Card.Header>
-				</Card.Root>
-			{/if}
+		<div id="map-results-timer">
+			<div id="map-results-timer-child" style="position: absolute; top: 50px; right: 5px; z-index: 10; width: 300px;">
+				{#if $time !== null}
+					<Card.Root style={($time.time * 100) / data.startTime <= 15 ? "border-color: red; border-width: 5px;" : ""}>
+						<Card.Header>
+							<Card.Title>Time remaining ({$time.time}s) – {$roundDetails.round}/{$roundDetails.totalRounds}</Card.Title>
+							<Card.Description>
+								{#if data.isTournament}Tournament game{:else}Friendly game{/if}
+								<Progress value={($time.time * 100) / data.startTime} />
+							</Card.Description>
+							<Card.Content>
+								{#each $clients as client}
+										<b style={client.locked ? "color: green;" : ""}>@{client.username}</b> – {client.score}<br>
+								{/each}
+								<br>
+								<Button on:click={() => reset.set($reset++)}>Pojdi nazaj na prvotno pozicijo</Button>
+							</Card.Content>
+						</Card.Header>
+					</Card.Root>
+				{/if}
+			</div>
 		</div>
-		<StreetView roundDetails={roundDetails} />
+		<StreetView roundDetails={roundDetails} reset={reset} />
 		<DraggableMap roundId={data.roundId} guess={$guess} roundResults={roundResults} />
 	</div>
 {:else}

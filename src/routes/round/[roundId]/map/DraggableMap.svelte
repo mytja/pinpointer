@@ -93,6 +93,21 @@
 			zoomControl: true,
 		});
 
+		// HACKY AS FUCK
+		// FUCK EM BROWSERS
+		const mapChild = document.getElementById("map").firstChild;
+		mapChild?.addEventListener("fullscreenchange", (event: HTMLElementEventMap["fullscreenchange"]) => {
+			const isExiting = document.fullscreenElement === null;
+			const timer = document.getElementById("map-results-timer-child");
+			const nonFS = document.getElementById("map-results-timer");
+			if (timer === null) return;
+			if (isExiting) {
+				nonFS.appendChild(timer);
+			} else {
+				mapChild.appendChild(timer);
+			}
+		});
+
 		map.addListener("click", async (e: google.maps.MapMouseEvent) => {
 			if (locked) return;
 			if (marker == null) {

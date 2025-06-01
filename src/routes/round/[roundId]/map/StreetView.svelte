@@ -5,8 +5,9 @@
 
 	interface MyProps {
 		roundDetails: Readable<{ lat: number, lng: number }>;
+		reset: Readable<number>;
 	};
-	let { roundDetails }: MyProps = $props();
+	let { roundDetails, reset }: MyProps = $props();
 
 	let panorama: google.maps.StreetViewPanorama | undefined;
 
@@ -21,7 +22,7 @@
 				showRoadLabels: false,
 				motionTrackingControl: false,
 				zoomControl: false,
-				panControl: false
+				panControl: true,
 			}
 		);
 		panorama.setPosition($roundDetails);
@@ -31,6 +32,11 @@
 		if (panorama === undefined) return;
 		console.log('novi round detailsi');
 		panorama.setPosition(value);
+	});
+
+	reset.subscribe(() => {
+		if (panorama === undefined) return;
+		panorama.setPosition($roundDetails);
 	});
 </script>
 
