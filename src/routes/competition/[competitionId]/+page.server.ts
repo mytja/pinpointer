@@ -185,9 +185,6 @@ export async function load({ cookies, params }) {
 		where: {
 			competitionId: params.competitionId
 		},
-		orderBy: {
-			score: 'desc'
-		},
 		include: {
 			user: true
 		}
@@ -210,9 +207,9 @@ export async function load({ cookies, params }) {
 
 	for (let c = 0; c < competitorsJson.length; c++) {
 		competitorsJson[c].rounds = [];
+		competitorsJson[c].normalizedScore = 0;
 		for (let i = 0; i < rounds.length; i++) {
 			competitorsJson[c].rounds.push(null);
-			competitorsJson[c].normalizedScore = 0;
 			for (let r = 0; r < rounds[i].competitors.length; r++) {
 				const competitor = rounds[i].competitors[r];
 				if (competitor.userId !== competitorsJson[c].userId) {
@@ -222,12 +219,16 @@ export async function load({ cookies, params }) {
 					// @ts-expect-error - The competitor object type doesn't include isBestPerformer property, but we need to add it dynamically to track best scores
 					competitor.isBestPerformer = true;
 				}
-				competitor.normalized = Math.round(rounds[i].numberOfRounds * 5000 * competitor.score / bestPerformers[i]);
+				competitor.normalized = 0;
+				if (bestPerformers[i] !== 0) competitor.normalized = Math.round(rounds[i].numberOfRounds * 5000 * competitor.score / bestPerformers[i]);
 				competitorsJson[c].normalizedScore += competitor.normalized;
+				//console.log(c, i, r, competitorsJson[c].normalizedScore, competitor.normalized);
 				competitorsJson[c].rounds[i] = competitor;
 			}
 		}
 	}
+
+	competitorsJson.sort((a, b) => (a.normalizedScore < b.normalizedScore) ? 1 : -1);
 
 	let totalRounds = 0;
 	for (let i = 0; i < rounds.length; i++) {
