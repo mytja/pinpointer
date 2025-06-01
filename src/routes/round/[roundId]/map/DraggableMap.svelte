@@ -21,6 +21,7 @@
 
 	let posX = $state(0);
 	let posY = $state(0);
+	let style = $state("");
 	let isDragging = false;
 	let windowWidth = window.innerWidth;
 	let windowHeight = window.innerHeight;
@@ -44,10 +45,12 @@
 		// Determine snap position based on current x position
 		if (posX + rect.width / 2 < middlePoint) {
 			// Snap to bottom-left
-			posX = 0;
+			posX = -1;
+			style = "bottom: 0; left: 0;";
 		} else {
 			// Snap to bottom-right
-			posX = windowWidth - rect.width;
+			posX = -1;
+			style = "bottom: 0; right: 0;";
 		}
 
 		// Always snap to the bottom of the screen
@@ -59,7 +62,7 @@
 	}
 
 	// Update window dimensions on resize
-	window.addEventListener("resize", () => {
+	/*window.addEventListener("resize", () => {
 		windowWidth = window.innerWidth;
 		windowHeight = window.innerHeight;
 		if (posX !== 0) {
@@ -68,7 +71,7 @@
 			posY = windowHeight - rect.height;
 			console.log("pos", posX, posY)
 		}
-	});
+	});*/
 
 	let marker: google.maps.marker.AdvancedMarkerElement | null = null;
 	let map: google.maps.Map | undefined;
@@ -161,7 +164,7 @@
 <div
 	bind:this={draggableEl}
 	class="draggable"
-	style="left: {posX}px; top: {posY}px"
+	style={posX !== -1 ? `left: ${posX}px; top: ${posY}px` : style}
 	onmouseup={handleMouseUp}
 	onmousemove={handleMouseMove}
 	id="draggable-element"
