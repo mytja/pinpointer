@@ -17,7 +17,7 @@
 			<div style="width: 6px"></div>
 			<a style="font-size: 28px;" href="/">Pinpointer</a>
 			<div style="width: 6px"></div>
-			<span style="font-size: 20px; color: gray;">v1.0.0</span>
+			<span style="font-size: 20px; color: gray;">v1.0.1</span>
 
 			<div class="w-10"></div>
 
