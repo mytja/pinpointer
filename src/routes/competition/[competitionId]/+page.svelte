@@ -24,6 +24,10 @@
 	.bold {
 			font-weight: bold;
 	}
+
+	.green {
+			color: lightgreen;
+	}
 </style>
 
 <svelte:head>
@@ -76,7 +80,7 @@
 								{#if round === null}
 									<Table.Cell></Table.Cell>
 								{:else}
-									<Table.Cell><span class="mega">{round.score}</span><span class="subscripted">({round.normalized})</span></Table.Cell>
+									<Table.Cell><span class="mega {round.isBestPerformer ? 'green bold' : ''}">{round.score}</span><span class="subscripted">({round.normalized})</span></Table.Cell>
 								{/if}
 							{/each}
 							<Table.Cell><span class="mega bold">{competitor.score}</span></Table.Cell>

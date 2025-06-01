@@ -134,7 +134,7 @@
 				{/if}
 			</div>
 		</div>
-		<StreetView roundDetails={roundDetails} reset={reset} />
+		<StreetView roundDetails={roundDetails} reset={reset} canMove={data.canMove} canRotate={data.canRotate} canZoom={data.canZoom} />
 		<DraggableMap roundId={data.roundId} guess={$guess} roundResults={roundResults} />
 	</div>
 {:else}

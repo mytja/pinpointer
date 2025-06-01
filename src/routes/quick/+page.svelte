@@ -2,6 +2,7 @@
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Button } from '$lib/components/ui/button';
 	import { Label } from '$lib/components/ui/label';
+	import { Switch } from '$lib/components/ui/switch';
 </script>
 
 <div style="padding: 20px">
@@ -29,6 +30,21 @@
 			<Input type="text" name="location" placeholder="Round location" class="max-w-xl" />
 			<Label for="location">Round location</Label>
 			<div style="height: 15px;"></div>
+
+			<!--<div class="flex items-center space-x-2">
+				<Switch name="canMove" id="canMove" checked />
+				<Label for="canMove">Can move?</Label>
+			</div>
+			<div style="height: 10px;"></div>
+			<div class="flex items-center space-x-2">
+				<Switch name="canRotate" id="canRotate" checked />
+				<Label for="canRotate">Can rotate?</Label>
+			</div>
+			<div style="height: 10px;"></div>
+			<div class="flex items-center space-x-2">
+				<Switch name="canZoom" id="canZoom" checked />
+				<Label for="canZoom">Can zoom?</Label>
+			</div>-->
 
 			<br>
 

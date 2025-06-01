@@ -17,6 +17,9 @@ export const actions = {
 		const startTime = +data.get('startTime')!;
 		const countdown = +data.get('countdown')!;
 		const location = data.get('location')?.toString();
+		const canMove = data.get('canMove') === 'on';
+		const canZoom = data.get('canZoom') === 'on';
+		const canRotate = data.get('canRotate') === 'on';
 
 		if (location === undefined || numberOfRounds <= 0 || startTime <= 0) {
 			error(400, 'Bad request!');
@@ -40,6 +43,9 @@ export const actions = {
 			countdown,
 			user?.id,
 			false,
+			canMove,
+			canRotate,
+			canZoom,
 		);
 		await rounds[roundId].initialize();
 

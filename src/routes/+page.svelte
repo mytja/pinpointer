@@ -1,3 +1,4 @@
+
 <!--suppress ES6UnusedImports -->
 <script>
 	import * as Card from '$lib/components/ui/card';
@@ -25,7 +26,10 @@
 		<Button href="/quick">Create a quick match</Button>
 		<br><br>
 		<div class="inline-block" style="width: 100%;">
-			<Input type="text" bind:value={roundId} name="username" placeholder="Join a quick match with an invite code" class="max-w-xl inline" />
+			<Input type="text" bind:value={roundId} name="username" placeholder="Join a quick match with an invite code" class="max-w-xl inline" on:keydown={(event) => {
+				if (event.key !== 'Enter') return;
+				document.location.href = `/round/${roundId}/map`
+			}} />
 			<Button href="/round/{roundId}/map" class="inline">Join a quick match</Button>
 		</div>
 

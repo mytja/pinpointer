@@ -137,7 +137,10 @@ export const actions = {
 			round.startTime,
 			round.countdown,
 			competition.authorId,
-			true
+			true,
+			true,
+			true,
+			true,
 		);
 		await rounds[roundId].initialize();
 
@@ -193,8 +196,8 @@ export async function load({ cookies, params }) {
 		competitors = [];
 	}
 
-	type Round = RoundPlayerResults | null;
-	type ExtendedCompetitors = typeof competitors & { rounds: Round[] }[];
+	type Round = (RoundPlayerResults) | null;
+	type ExtendedCompetitors = typeof competitors & { rounds: Round[], normalizedScore: number }[];
 	const competitorsJson: ExtendedCompetitors = competitors as ExtendedCompetitors;
 
 	const bestPerformers: number[] = [];
@@ -211,12 +214,15 @@ export async function load({ cookies, params }) {
 		for (let i = 0; i < rounds.length; i++) {
 			competitorsJson[c].rounds.push(null);
 			for (let r = 0; r < rounds[i].competitors.length; r++) {
-				const competitor = rounds[i].competitors[r];
+				const competitor = {
+					...rounds[i].competitors[r],
+					isBestPerformer: false,
+					normalized: 0,
+				};
 				if (competitor.userId !== competitorsJson[c].userId) {
 					continue;
 				}
 				if (bestPerformers[i] === competitor.score) {
-					// @ts-expect-error - The competitor object type doesn't include isBestPerformer property, but we need to add it dynamically to track best scores
 					competitor.isBestPerformer = true;
 				}
 				competitor.normalized = 0;
@@ -228,6 +234,7 @@ export async function load({ cookies, params }) {
 		}
 	}
 
+	// @ts-expect-error - TypeScript is a dumbfuck
 	competitorsJson.sort((a, b) => (a.normalizedScore < b.normalizedScore) ? 1 : -1);
 
 	let totalRounds = 0;

@@ -1,10 +1,8 @@
 <script lang="ts">
 	/* eslint-disable no-undef */
 	import { onMount } from 'svelte';
-	import * as pkg from '@googlemaps/js-api-loader';
 	import { Button } from '$lib/components/ui/button';
 	import type { RoundResult } from './types';
-	const {Loader} = pkg;
 	import { env } from '$env/dynamic/public';
 	import type { Readable } from 'svelte/store';
 
@@ -71,7 +69,7 @@
 		}
 	});
 
-	let marker: google.maps.AdvancedMarkerElement | null = null;
+	let marker: google.maps.marker.AdvancedMarkerElement | null = null;
 	let map: google.maps.Map | undefined;
 
 	onMount(async () => {
@@ -95,14 +93,14 @@
 
 		// HACKY AS FUCK
 		// FUCK EM BROWSERS
-		const mapChild = document.getElementById("map").firstChild;
-		mapChild?.addEventListener("fullscreenchange", (event: HTMLElementEventMap["fullscreenchange"]) => {
+		const mapChild = document.getElementById("map")!.firstChild;
+		mapChild?.addEventListener("fullscreenchange", () => {
 			const isExiting = document.fullscreenElement === null;
 			const timer = document.getElementById("map-results-timer-child");
 			const nonFS = document.getElementById("map-results-timer");
 			if (timer === null) return;
 			if (isExiting) {
-				nonFS.appendChild(timer);
+				nonFS!.appendChild(timer);
 			} else {
 				mapChild.appendChild(timer);
 			}
@@ -145,7 +143,7 @@
 		if (map === undefined || marker === null) return;
 		map!.panTo({ lat: 0.000, lng: 0.000 });
 		map!.setZoom(1);
-		marker.setMap(null);
+		marker.map = null;
 		marker = null;
 		locked = false;
 	});

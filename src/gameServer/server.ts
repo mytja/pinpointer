@@ -27,6 +27,9 @@ export class Round {
 	timerFunction: NodeJS.Timeout | null;
 	isTournament: boolean;
 	ownerId: string;
+	canMove: boolean;
+	canRotate: boolean;
+	canZoom: boolean;
 
 	constructor(
 		tournamentRoundId: string,
@@ -36,6 +39,9 @@ export class Round {
 		pressuredTimer: number,
 		ownerId: string,
 		isTournament: boolean,
+		canMove: boolean,
+		canRotate: boolean,
+		canZoom: boolean,
 	) {
 		this.players = [];
 		this.tournamentRoundId = tournamentRoundId;
@@ -52,6 +58,9 @@ export class Round {
 		this.pressuredTimer = pressuredTimer;
 		this.ownerId = ownerId;
 		this.isTournament = isTournament;
+		this.canMove = canMove;
+		this.canRotate = canRotate;
+		this.canZoom = canZoom;
 	}
 
 	broadcast(messageType: string, message: string) {
@@ -199,7 +208,7 @@ export class Round {
 	}
 
 	locationMessage() {
-		return {...this.currentLocation, round: this.state, totalRounds: this.requiredRoundNumber};
+		return {...this.currentLocation, round: this.state, totalRounds: this.requiredRoundNumber, boundaryBox: this.boundaryBox};
 	}
 
 	sendLocation() {
@@ -218,7 +227,7 @@ export class Round {
 				lng: this.boundaryBox[3]
 			}
 		) / 20000000;
-		let searchRadius = Math.round(boundaryBoxSize * 80000);
+		const searchRadius = Math.round(boundaryBoxSize * 80000);
 		console.log("BBOX SIZE: ", boundaryBoxSize, "SEARCH RADIUS: ", searchRadius);
 
 		while (true) {
@@ -296,7 +305,7 @@ export class Round {
 		}
 		this.timer = this.startTime;
 		this.state++;
-		if (this.state > this.requiredRoundNumber) {
+		if (this.state > this.requiredRoundNumber && !this.isTournament) {
 			await prisma.competitionRound.update({
 				where: {
 					id: this.tournamentRoundId,
@@ -306,6 +315,8 @@ export class Round {
 				}
 			});
 			await this.results();
+			return;
+		} else if (this.state > this.requiredRoundNumber && this.isTournament) {
 			return;
 		}
 		if (this.isTournament) {

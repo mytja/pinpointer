@@ -6,8 +6,11 @@
 	interface MyProps {
 		roundDetails: Readable<{ lat: number, lng: number }>;
 		reset: Readable<number>;
+		canMove: boolean;
+		canRotate: boolean;
+		canZoom: boolean;
 	};
-	let { roundDetails, reset }: MyProps = $props();
+	let { roundDetails, reset, canMove, canRotate, canZoom }: MyProps = $props();
 
 	let panorama: google.maps.StreetViewPanorama | undefined;
 

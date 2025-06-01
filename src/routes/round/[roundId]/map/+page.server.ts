@@ -58,5 +58,8 @@ export async function load({ cookies, params }) {
 		roundId: roundId,
 		competitionId: competitionId,
 		isTournament: isTournament,
+		canMove: rounds[roundId].canMove,
+		canRotate: rounds[roundId].canRotate,
+		canZoom: rounds[roundId].canZoom,
 	};
 }
