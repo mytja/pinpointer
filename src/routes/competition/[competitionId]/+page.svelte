@@ -128,8 +128,8 @@
 							<Card.Title>Round {round.roundNumber}</Card.Title>
 							<Card.Description>
 								Location: {round.location}<br>
-								Number of rounds: {round.numberOfRounds}
-								Estimated time: {Math.ceil(round.startTime * round.numberOfRounds / 60)} minutes
+								Number of rounds: {round.numberOfRounds}<br>
+								Estimated time: {Math.ceil(round.startTime * round.numberOfRounds / 60)} minutes<br>
 								{round.startTime} seconds per round — {#if round.countdown === -1}No countdown{:else}{round.countdown} second countdown{/if}
 							</Card.Description>
 						</Card.Header>
