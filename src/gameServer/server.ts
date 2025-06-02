@@ -6,6 +6,14 @@ import haversine from 'haversine-distance';
 import classifyPoint from 'robust-point-in-polygon';
 import { getRandomNumber } from 'gameServer/random';
 import { env } from '$env/dynamic/private';
+import {
+	CENTRAL1_EUROPE_BOUNDING_BOX, CENTRAL2_EUROPE_BOUNDING_BOX,
+	EASTERN_EUROPE_BOUNDING_BOX,
+	EUROPE,
+	EUROPE_BOUNDING_BOX,
+	NORTHERN_EUROPE_BOUNDING_BOX,
+	WESTERN_EUROPE_BOUNDING_BOX
+} from './europe';
 
 type LatLng = { lat: number; lng: number };
 
@@ -19,6 +27,7 @@ export class Round {
 	tournamentPlace: string;
 	polygon: number[][] | null;
 	boundaryBox: number[];
+	fakeBoundaryBox: number[];
 	clients: Record<string, Client>;
 	currentLocation: LatLng | null;
 	timer: number;
@@ -50,6 +59,7 @@ export class Round {
 		this.tournamentPlace = tournamentPlace;
 		this.polygon = null;
 		this.boundaryBox = [];
+		this.fakeBoundaryBox = [];
 		this.clients = {};
 		this.currentLocation = null;
 		this.timer = 0;
@@ -163,6 +173,7 @@ export class Round {
 				[-60.0, 180.0],
 			];
 			this.boundaryBox = [-180.0, -90.0, 180.0, 90.0];
+			this.fakeBoundaryBox = [-180.0, -90.0, 180.0, 90.0];
 			return;
 		}
 		const r = await fetch(
@@ -180,6 +191,7 @@ export class Round {
 		const feature = json.features[0];
 		const bbox = feature.bbox;
 		this.boundaryBox = bbox;
+		this.fakeBoundaryBox = bbox;
 		if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
 			// Polygon coordinates are available.
 			// This is more accurate.
@@ -198,6 +210,11 @@ export class Round {
 				[bbox[3], bbox[0]],
 				[bbox[3], bbox[2]]
 			];
+		}
+		if (this.tournamentPlace.toLowerCase() === 'europe') {
+			this.polygon = EUROPE;
+			this.boundaryBox = EUROPE_BOUNDING_BOX;
+			this.fakeBoundaryBox = EUROPE_BOUNDING_BOX;
 		}
 		if (this.polygon === null) {
 			throw Error('Polygon is null');
@@ -230,16 +247,27 @@ export class Round {
 		const searchRadius = Math.round(boundaryBoxSize * 80000);
 		console.log("BBOX SIZE: ", boundaryBoxSize, "SEARCH RADIUS: ", searchRadius);
 
+		if (this.tournamentPlace.toLowerCase() === 'europe') {
+			const choice = Math.floor(Math.random() * 5);
+			if (choice === 0) this.fakeBoundaryBox = NORTHERN_EUROPE_BOUNDING_BOX;
+			else if (choice === 1) this.fakeBoundaryBox = WESTERN_EUROPE_BOUNDING_BOX;
+			else if (choice === 2) this.fakeBoundaryBox = CENTRAL1_EUROPE_BOUNDING_BOX;
+			else if (choice === 3) this.fakeBoundaryBox = CENTRAL2_EUROPE_BOUNDING_BOX;
+			else if (choice === 4) this.fakeBoundaryBox = EASTERN_EUROPE_BOUNDING_BOX;
+		}
+
 		while (true) {
-			const lng = getRandomNumber(this.boundaryBox[0], this.boundaryBox[2]);
-			const lat = getRandomNumber(this.boundaryBox[1], this.boundaryBox[3]);
+			const lng = getRandomNumber(this.fakeBoundaryBox[0], this.fakeBoundaryBox[2]);
+			const lat = getRandomNumber(this.fakeBoundaryBox[1], this.fakeBoundaryBox[3]);
 			const location = [lat, lng];
-			console.log(location);
 
 			// Check whether the generated location is contained within the polygon
 			if (classifyPoint(this.polygon, location) != -1) {
+				console.log("Not in boundary box", location);
 				continue;
 			}
+
+			console.log("In boundary box", location);
 
 			// Check for the nearest Street View
 			const r = await fetch(
