@@ -18,6 +18,7 @@
 	let { data } = $props();
 
 	const audio = new Audio('/beep.mp3');
+	const audio1 = new Audio('/beep1.mp3');
 
 	const s = source(`/round/${data.roundId}/client`);
 	const clients = s.select('clients').json(
@@ -53,7 +54,8 @@
 	time.subscribe((value) => {
 		if (value === null) return;
 		if (value.time <= 0) return;
-		if (value.time <= 10) audio.play();
+		if (value.time <= 5) audio.play();
+		if (value.time == 15) audio1.play();
 	})
 
 	roundDetails.subscribe((value) => {
