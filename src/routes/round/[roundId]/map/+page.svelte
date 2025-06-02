@@ -109,7 +109,7 @@
 {:else}
 {#if $roundDetails !== null}
 	<ResultsMap isOwner={data.isOwner} roundResults={$roundResults} hideRoundDetails={hideRoundDetails}
-							roundId={data.roundId} />
+							roundId={data.roundId} roundNumber={$roundDetails.round} roundCount={$roundDetails.totalRounds} />
 	<div class="map-page">
 		<div id="map-results-timer">
 			<div id="map-results-timer-child" style="position: absolute; top: 50px; right: 5px; z-index: 10; width: 300px;">

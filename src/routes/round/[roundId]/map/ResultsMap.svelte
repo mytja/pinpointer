@@ -12,9 +12,11 @@
 		roundResults: RoundResult[] | null;
 		hideRoundDetails: boolean;
 		roundId: string;
+		roundNumber: number;
+		roundCount: number;
 	}
 
-	let { isOwner, roundResults, hideRoundDetails, roundId }: MyProps = $props();
+	let { isOwner, roundResults, hideRoundDetails, roundId, roundNumber, roundCount }: MyProps = $props();
 
 	let markers: google.maps.marker.AdvancedMarkerElement[] = [];
 	let map: google.maps.Map | undefined;
@@ -68,7 +70,7 @@
 
 		for (let m = 0; m < markers.length; m++) {
 			const marker = markers[m];
-			marker.setMap(null);
+			marker.map = null;
 		}
 		markers = [];
 
@@ -150,7 +152,7 @@
 		<div style="display: flex; flex-direction: row;">
 			<div id="results-map" style="height: 85vh; min-width: 60vw;"></div>
 			<div style="flex-grow: 1; height: 85vh; padding-left: 20px;">
-				<span style="font-size: 2em;">Results</span>
+				<span style="font-size: 2em;">Results ({roundNumber}/{roundCount})</span>
 				<br><br>
 				<table class="striped" style="width: 100%;">
 					<thead>
