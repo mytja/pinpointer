@@ -15,6 +15,8 @@ import {
 	WESTERN_EUROPE_BOUNDING_BOX
 } from './europe';
 
+import isSea from 'is-sea';
+
 type LatLng = { lat: number; lng: number };
 
 export const rounds: Record<string, Round> = {};
@@ -172,8 +174,8 @@ export class Round {
 				[90.0, 180.0],
 				[-60.0, 180.0],
 			];
-			this.boundaryBox = [-180.0, -90.0, 180.0, 90.0];
-			this.fakeBoundaryBox = [-180.0, -90.0, 180.0, 90.0];
+			this.boundaryBox = [-180.0, -60.0, 180.0, 80.0];
+			this.fakeBoundaryBox = [-180.0, -60.0, 180.0, 80.0];
 			return;
 		}
 		const r = await fetch(
@@ -244,7 +246,7 @@ export class Round {
 				lat: this.boundaryBox[3]
 			}
 		) / 20000000;
-		const searchRadius = Math.round(boundaryBoxSize * 80000);
+		const searchRadius = Math.min(20000, Math.round(boundaryBoxSize * 80000));
 		console.log("BBOX SIZE: ", boundaryBoxSize, "SEARCH RADIUS: ", searchRadius);
 
 		if (this.tournamentPlace.toLowerCase() === 'europe') {
@@ -260,6 +262,10 @@ export class Round {
 			const lng = getRandomNumber(this.fakeBoundaryBox[0], this.fakeBoundaryBox[2]);
 			const lat = getRandomNumber(this.fakeBoundaryBox[1], this.fakeBoundaryBox[3]);
 			const location = [lat, lng];
+			if (isSea(lat, lng)) {
+				console.log("Hit the sea", location);
+				continue;
+			}
 
 			// Check whether the generated location is contained within the polygon
 			if (classifyPoint(this.polygon, location) != -1) {
