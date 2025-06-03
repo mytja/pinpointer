@@ -14,8 +14,7 @@ import {
 	NORTHERN_EUROPE_BOUNDING_BOX,
 	WESTERN_EUROPE_BOUNDING_BOX
 } from './europe';
-
-import isSea from 'is-sea';
+import { isSea } from '$lib/is-sea/isSea';
 
 type LatLng = { lat: number; lng: number };
 
