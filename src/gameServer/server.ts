@@ -338,7 +338,7 @@ export class Round {
 		}
 		this.timer = this.startTime;
 		this.state++;
-		if (this.state > this.requiredRoundNumber && !this.isTournament) {
+		if (this.state > this.requiredRoundNumber && this.isTournament) {
 			await prisma.competitionRound.update({
 				where: {
 					id: this.tournamentRoundId,
@@ -349,7 +349,7 @@ export class Round {
 			});
 			await this.results();
 			return;
-		} else if (this.state > this.requiredRoundNumber && this.isTournament) {
+		} else if (this.state > this.requiredRoundNumber && !this.isTournament) {
 			return;
 		}
 		if (this.isTournament) {
