@@ -26,7 +26,7 @@ export class Round {
 	state: number;
 	requiredRoundNumber: number;
 	tournamentPlace: string;
-	polygon: number[][] | null;
+	polygon: number[][][] | null;
 	boundaryBox: number[];
 	fakeBoundaryBox: number[];
 	clients: Record<string, Client>;
@@ -168,10 +168,12 @@ export class Round {
 		if (this.tournamentPlace === "World") {
 			// we cut off Antarctica
 			this.polygon = [
-				[-60.0, -180.0],
-				[90.0, -180.0],
-				[90.0, 180.0],
-				[-60.0, 180.0],
+				[
+					[-60.0, -180.0],
+					[90.0, -180.0],
+					[90.0, 180.0],
+					[-60.0, 180.0],
+				],
 			];
 			this.boundaryBox = [-180.0, -60.0, 180.0, 80.0];
 			this.fakeBoundaryBox = [-180.0, -60.0, 180.0, 80.0];
@@ -193,23 +195,40 @@ export class Round {
 		const bbox = feature.bbox;
 		this.boundaryBox = bbox;
 		this.fakeBoundaryBox = bbox;
-		if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
+		if (feature.geometry.type === 'MultiPolygon') {
 			// Polygon coordinates are available.
 			// This is more accurate.
-			// Examples: Slovenia, Australia
-			this.polygon = feature.geometry.coordinates[0];
+			// Examples: Australia
+			this.polygon = [];
+			const poly: number[][][][] = feature.geometry.coordinates;
+			for (let i = 0; i < poly.length; i++) {
+				const actualPoly = poly[i][0];
+				this.polygon.push(actualPoly);
+				for (let k = 0; k < this.polygon[i].length; k++) {
+					this.polygon[i][k].reverse();
+				}
+			}
+		} else if (feature.geometry.type === 'Polygon') {
+			// Polygon coordinates are available.
+			// This is more accurate.
+			// Examples: Slovenia
+			this.polygon = feature.geometry.coordinates;
 			for (let i = 0; i < this.polygon!.length; i++) {
-				this.polygon![i].reverse();
+				for (let k = 0; k < this.polygon![i].length; k++) {
+					this.polygon![i][k].reverse();
+				}
 			}
 		} else {
 			// Only rough polygon coordinates are available.
 			// Less accurate, more used for continents without real boundaries.
 			// Examples: Europe
 			this.polygon = [
-				[bbox[1], bbox[0]],
-				[bbox[1], bbox[2]],
-				[bbox[3], bbox[0]],
-				[bbox[3], bbox[2]]
+				[
+					[bbox[1], bbox[0]],
+					[bbox[1], bbox[2]],
+					[bbox[3], bbox[0]],
+					[bbox[3], bbox[2]]
+				],
 			];
 		}
 		if (this.tournamentPlace.toLowerCase() === 'europe') {
@@ -267,7 +286,14 @@ export class Round {
 			}
 
 			// Check whether the generated location is contained within the polygon
-			if (classifyPoint(this.polygon, location) != -1) {
+			let found = false;
+			for (let i = 0; i < this.polygon!.length; i++) {
+				if (classifyPoint(this.polygon[i], location) == -1) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
 				console.log("Not in boundary box", location);
 				continue;
 			}
@@ -287,7 +313,16 @@ export class Round {
 			const actualLat = json.location.lat;
 			const actualLng = json.location.lng;
 			const actualLocation = [actualLat, actualLng];
-			if (classifyPoint(this.polygon, actualLocation) != -1) {
+
+			found = false;
+			for (let i = 0; i < this.polygon!.length; i++) {
+				if (classifyPoint(this.polygon[i], actualLocation) == -1) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				console.log("Not in boundary box", location);
 				continue;
 			}
 
