@@ -264,7 +264,7 @@ export class Round {
 				lat: this.boundaryBox[3]
 			}
 		) / 20000000;
-		const searchRadius = Math.min(40000, Math.round(boundaryBoxSize * 90000));
+		const searchRadius = Math.min(80000, Math.round(boundaryBoxSize * 90000));
 		console.log("BBOX SIZE: ", boundaryBoxSize, "SEARCH RADIUS: ", searchRadius);
 
 		if (this.tournamentPlace.toLowerCase() === 'europe') {
