@@ -45,16 +45,19 @@ model CompetitionEnrollment {
 }
 
 model CompetitionRound {
-  id             String               @id @unique @default(uuid())
-  competition    Competition          @relation(fields: [competitionId], references: [id], onDelete: Cascade)
-  competitionId  String
-  roundNumber    Int
-  location       String
-  state          Int                  @default(-1)
-  numberOfRounds Int                  @default(15)
-  startTime      Int                  @default(90)
-  countdown      Int                  @default(15)
-  competitors    RoundPlayerResults[]
+  id                      String               @id @unique @default(uuid())
+  competition             Competition          @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  competitionId           String
+  roundNumber             Int
+  location                String
+  state                   Int                  @default(-1)
+  numberOfRounds          Int                  @default(15)
+  startTime               Int                  @default(90)
+  countdown               Int                  @default(15)
+  competitors             RoundPlayerResults[]
+  roundType               Int                  @default(0)
+  showMunicipalityLetters Boolean              @default(false)
+  showGeojson             Boolean              @default(false)
 }
 
 model RoundPlayerResults {
