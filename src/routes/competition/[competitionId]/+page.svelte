@@ -127,10 +127,20 @@
 						<Card.Header>
 							<Card.Title>Round {round.roundNumber}</Card.Title>
 							<Card.Description>
-								Location: {round.location}<br>
+								{#if round.roundType !== 1}Location: {round.location}<br>{/if}
 								Number of rounds: {round.numberOfRounds}<br>
 								Estimated time: {Math.ceil(round.startTime * round.numberOfRounds / 60)} minutes<br>
 								{round.startTime} seconds per round — {#if round.countdown === -1}No countdown{:else}{round.countdown} second countdown{/if}
+								<div style="height: 5px;"></div>
+								<hr>
+								<div style="height: 5px;"></div>
+								{#if round.roundType === 0}
+									<b>Normal round</b>
+								{:else}
+									<b>Slovenian municipalities</b><br>
+									{#if round.showGeojson}GeoJSON will be shown<br>{/if}
+									{#if round.showMunicipalityLetters}Municipality letters will be displayed{/if}
+								{/if}
 							</Card.Description>
 						</Card.Header>
 						<Card.Footer>

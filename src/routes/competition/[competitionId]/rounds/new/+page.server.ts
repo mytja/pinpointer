@@ -26,6 +26,12 @@ export const actions = {
 		const startTime = +data.get('startTime')!;
 		const countdown = +data.get('countdown')!;
 		const location = data.get('location')?.toString();
+		const roundType = +data.get('roundType')!;
+		if (!(roundType === 0 || roundType === 1)) {
+			error(400, "Bad request! Invalid roundType!");
+		}
+		const showGeojson = data.get('showGeojson') === 'on';
+		const municipalityLetters = data.get('municipalityLetters') === 'on';
 
 		if (location === undefined || numberOfRounds <= 0 || startTime <= 0) {
 			error(400, 'Bad request!');
@@ -39,7 +45,10 @@ export const actions = {
 				location: location === '' ? 'World' : location,
 				competitionId: params.competitionId,
 				startTime: startTime,
-				countdown: countdown
+				countdown: countdown,
+				roundType: roundType,
+				showGeojson: showGeojson,
+				showMunicipalityLetters: municipalityLetters,
 			}
 		});
 

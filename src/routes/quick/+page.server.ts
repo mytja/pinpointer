@@ -20,6 +20,12 @@ export const actions = {
 		const canMove = data.get('canMove') === 'on';
 		const canZoom = data.get('canZoom') === 'on';
 		const canRotate = data.get('canRotate') === 'on';
+		const showGeojson = data.get('showGeojson') === 'on';
+		const municipalityLetters = data.get('municipalityLetters') === 'on';
+		const roundType = +data.get('roundType')!;
+		if (!(roundType === 0 || roundType === 1)) {
+			error(400, "Bad request! Invalid roundType!");
+		}
 
 		if (location === undefined || numberOfRounds <= 0 || startTime <= 0) {
 			error(400, 'Bad request!');
@@ -46,6 +52,9 @@ export const actions = {
 			canMove,
 			canRotate,
 			canZoom,
+			roundType,
+			municipalityLetters,
+			showGeojson,
 		);
 		await rounds[roundId].initialize();
 

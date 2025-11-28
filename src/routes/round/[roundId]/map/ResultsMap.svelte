@@ -14,9 +14,10 @@
 		roundId: string;
 		roundNumber: number;
 		roundCount: number;
+		roundType: number;
 	}
 
-	let { isOwner, roundResults, hideRoundDetails, roundId, roundNumber, roundCount }: MyProps = $props();
+	let { isOwner, roundResults, hideRoundDetails, roundId, roundNumber, roundCount, roundType }: MyProps = $props();
 
 	let markers: google.maps.marker.AdvancedMarkerElement[] = [];
 	let map: google.maps.Map | undefined;
@@ -32,35 +33,12 @@
 			fullscreenControl: true,
 			zoomControl: true
 		});
-		/*	for (let m = 0; m < markers.length; m++) {
-				const marker = markers[m];
-				marker.setMap(null);
-			}
-			markers = [];
-			for (let m = 0; m < roundResults.length; m++) {
-				const roundResult = roundResults[m];
-				console.log('Round results', roundResult);
-				if (roundResult.userId === 'solution') {
-					const pinBackground = new PinElement({
-						background: '#FBBC04'
-					});
-					markers.push(new AdvancedMarkerElement({
-						map,
-						position: roundResult.latLng,
-						title: `Solution`,
-						content: pinBackground.element
-					}));
-					continue;
-				}
-				markers.push(new AdvancedMarkerElement({
-					map,
-					position: roundResult.latLng,
-					title: `${roundResult.username}; ${roundResult.distance}km, ${roundResult.addedScore} points`
-				}));
-			}
-		});*/
+		if (roundType === 1) {
+			map.data.loadGeoJson('/OB.geojson');
+		}
 	});
 
+	let munSol = $state("");
 	$effect(() => {
 		console.log("Updating markers", roundResults, map);
 		roundResults = roundResults;
@@ -78,6 +56,7 @@
 			const roundResult = roundResults[m];
 			console.log('Round results', roundResult);
 			if (roundResult.userId === 'solution') {
+				munSol = roundResult.municipality;
 				const pinBackground = new google.maps.marker.PinElement({
 					background: '#FBBC04'
 				});
@@ -153,12 +132,17 @@
 			<div id="results-map" style="height: 85vh; min-width: 60vw;"></div>
 			<div style="flex-grow: 1; height: 85vh; padding-left: 20px;">
 				<span style="font-size: 2em;">Results ({roundNumber}/{roundCount})</span>
+				<br>
+				<span style="font-size: 1.5em; font-weight: bold;">Občina {munSol}</span>
 				<br><br>
 				<table class="striped" style="width: 100%;">
 					<thead>
 					<tr>
 						<th scope="col">Username</th>
 						<th scope="col">Distance</th>
+						{#if roundType === 1}
+							<th scope="col">Municipality</th>
+						{/if}
 						<th scope="col">Score before</th>
 						<th scope="col">Points received</th>
 						<th scope="col">Total points</th>
@@ -171,6 +155,9 @@
 								<tr>
 									<th scope="row">@{roundResult.username}</th>
 									<td>{#if roundResult.distance === -1}❌{:else}{Math.round(roundResult.distance * 100) / 100} m{/if}</td>
+									{#if roundType === 1}
+										<td>{roundResult.municipality}</td>
+									{/if}
 									<td>{roundResult.scoreBefore}</td>
 									<td>{roundResult.addedScore}</td>
 									<td>{roundResult.newScore}</td>
@@ -184,7 +171,7 @@
 		</div>
 		{#if isOwner}
 			<div style="height: 12px;"></div>
-			<Button on:click={async () => {
+			<Button onclick={async () => {
 				await fetch(`/round/${roundId}/nextRound`, {method: "POST"})
 			}}>Next round
 			</Button>

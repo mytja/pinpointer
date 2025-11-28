@@ -7,18 +7,26 @@ import classifyPoint from 'robust-point-in-polygon';
 import { getRandomNumber } from 'gameServer/random';
 import { env } from '$env/dynamic/private';
 import {
-	CENTRAL1_EUROPE_BOUNDING_BOX, CENTRAL2_EUROPE_BOUNDING_BOX,
+	CENTRAL1_EUROPE_BOUNDING_BOX,
+	CENTRAL2_EUROPE_BOUNDING_BOX,
 	EASTERN_EUROPE_BOUNDING_BOX,
 	EUROPE,
 	EUROPE_BOUNDING_BOX,
 	NORTHERN_EUROPE_BOUNDING_BOX,
+	SLOVENIA_BOUNDING_BOX,
 	WESTERN_EUROPE_BOUNDING_BOX
 } from './europe';
 import { isSea } from '$lib/is-sea/isSea';
+import { OBCINE, type Obcina } from '$lib/obcine';
+import { OBCINE_GEOJSON } from '$lib/obcine-geojson';
 
 type LatLng = { lat: number; lng: number };
 
 export const rounds: Record<string, Round> = {};
+
+function replaceAt(original: string, index: number, replacement: string) {
+	return original.substring(0, index) + replacement + original.substring(index + replacement.length);
+}
 
 export class Round {
 	players: [];
@@ -40,6 +48,11 @@ export class Round {
 	canMove: boolean;
 	canRotate: boolean;
 	canZoom: boolean;
+	roundType: number;
+	flagQueue: Obcina[];
+	revealLetters: boolean;
+	letters: string;
+	showGeojson: boolean;
 
 	constructor(
 		tournamentRoundId: string,
@@ -52,6 +65,9 @@ export class Round {
 		canMove: boolean,
 		canRotate: boolean,
 		canZoom: boolean,
+		roundType: number,
+		revealLetters: boolean,
+		showGeojson: boolean,
 	) {
 		this.players = [];
 		this.tournamentRoundId = tournamentRoundId;
@@ -72,6 +88,11 @@ export class Round {
 		this.canMove = canMove;
 		this.canRotate = canRotate;
 		this.canZoom = canZoom;
+		this.roundType = roundType;
+		this.flagQueue = [];
+		this.revealLetters = revealLetters;
+		this.letters = '';
+		this.showGeojson = showGeojson;
 	}
 
 	broadcast(messageType: string, message: string) {
@@ -133,10 +154,15 @@ export class Round {
 		const j = [];
 		for (const key in this.clients) {
 			const client = this.clients[key];
-			j.push({ id: key, username: client.username, locked: client.guessLocked, score: client.score });
+			j.push({
+				id: key,
+				username: client.username,
+				locked: client.guessLocked,
+				score: client.score
+			});
 		}
 		if (sortByScore) {
-			j.sort((a, b) => (a.score < b.score) ? 1 : -1);
+			j.sort((a, b) => (a.score < b.score ? 1 : -1));
 		} else {
 			j.sort((a, b) => a.username.localeCompare(b.username));
 		}
@@ -157,23 +183,38 @@ export class Round {
 			this.clients[userId] = new Client(userId, username);
 		}
 		setTimeout(() => this.sendClients(), 50);
-		const {response, clientId} = this.clients[userId].newClient();
+		const { response, clientId } = this.clients[userId].newClient();
 		if (this.state >= 0) {
-			setTimeout(() => this.clients[userId].sendToSpecificClient(clientId, "newLocation", JSON.stringify(this.locationMessage())), 50);
+			setTimeout(
+				() =>
+					this.clients[userId].sendToSpecificClient(
+						clientId,
+						'newLocation',
+						JSON.stringify(this.locationMessage())
+					),
+				50
+			);
 		}
 		return response;
 	}
 
 	async initialize() {
-		if (this.tournamentPlace === "World") {
+		if (this.roundType === 1) {
+			// Slovenian municipalities
+			this.boundaryBox = SLOVENIA_BOUNDING_BOX;
+			this.fakeBoundaryBox = SLOVENIA_BOUNDING_BOX;
+			return;
+		}
+
+		if (this.tournamentPlace === 'World') {
 			// we cut off Antarctica
 			this.polygon = [
 				[
 					[-60.0, -180.0],
 					[90.0, -180.0],
 					[90.0, 180.0],
-					[-60.0, 180.0],
-				],
+					[-60.0, 180.0]
+				]
 			];
 			this.boundaryBox = [-180.0, -60.0, 180.0, 80.0];
 			this.fakeBoundaryBox = [-180.0, -60.0, 180.0, 80.0];
@@ -228,7 +269,7 @@ export class Round {
 					[bbox[1], bbox[2]],
 					[bbox[3], bbox[0]],
 					[bbox[3], bbox[2]]
-				],
+				]
 			];
 		}
 		if (this.tournamentPlace.toLowerCase() === 'europe') {
@@ -245,27 +286,70 @@ export class Round {
 	}
 
 	locationMessage() {
-		return {...this.currentLocation, round: this.state, totalRounds: this.requiredRoundNumber, boundaryBox: this.boundaryBox};
+		return {
+			...this.currentLocation,
+			round: this.state,
+			totalRounds: this.requiredRoundNumber,
+			boundaryBox: this.boundaryBox
+		};
+	}
+
+	flagMessage() {
+		return {
+			flag: this.flagQueue[this.flagQueue.length - 1].filename,
+			round: this.state,
+			totalRounds: this.requiredRoundNumber,
+			boundaryBox: this.boundaryBox
+		};
 	}
 
 	sendLocation() {
 		this.broadcast('newLocation', JSON.stringify(this.locationMessage()));
 	}
 
+	sendFlagMessage() {
+		this.broadcast('newFlag', JSON.stringify(this.flagMessage()));
+	}
+
 	async randomPlace() {
+		if (this.roundType === 1) {
+			// Slovenian municipalities
+			let flag = null;
+			while (flag === null || this.flagQueue.includes(flag)) {
+				flag = OBCINE[Math.round(getRandomNumber(0, OBCINE.length - 1))];
+			}
+			console.log('Izbrana zastava ', flag.id);
+			this.flagQueue.push(flag);
+			if (this.flagQueue.length >= 100) {
+				this.flagQueue.shift();
+			}
+			this.currentLocation = { lat: flag.lat, lng: flag.lng };
+			this.letters = "";
+			if (this.revealLetters) {
+				this.broadcast('locationName', this.letters);
+			}
+			for (let i = 0; i < flag.name.length; i++) {
+				this.letters += "_";
+				if (i != flag.name.length - 1) this.letters += " ";
+			}
+			this.sendFlagMessage();
+			return;
+		}
+
 		if (this.polygon === null) {
 			throw Error("Polygon hasn't been initialized yet!");
 		}
 
-		const boundaryBoxSize = haversine(
-			{ lng: this.boundaryBox[0], lat: this.boundaryBox[1] },
-			{
-				lng: this.boundaryBox[2],
-				lat: this.boundaryBox[3]
-			}
-		) / 20000000;
+		const boundaryBoxSize =
+			haversine(
+				{ lng: this.boundaryBox[0], lat: this.boundaryBox[1] },
+				{
+					lng: this.boundaryBox[2],
+					lat: this.boundaryBox[3]
+				}
+			) / 20000000;
 		const searchRadius = Math.min(80000, Math.round(boundaryBoxSize * 90000));
-		console.log("BBOX SIZE: ", boundaryBoxSize, "SEARCH RADIUS: ", searchRadius);
+		console.log('BBOX SIZE: ', boundaryBoxSize, 'SEARCH RADIUS: ', searchRadius);
 
 		if (this.tournamentPlace.toLowerCase() === 'europe') {
 			const choice = Math.floor(Math.random() * 5);
@@ -281,7 +365,7 @@ export class Round {
 			const lat = getRandomNumber(this.fakeBoundaryBox[1], this.fakeBoundaryBox[3]);
 			const location = [lat, lng];
 			if (isSea(lat, lng)) {
-				console.log("Hit the sea", location);
+				console.log('Hit the sea', location);
 				continue;
 			}
 
@@ -294,11 +378,11 @@ export class Round {
 				}
 			}
 			if (!found) {
-				console.log("Not in boundary box", location);
+				console.log('Not in boundary box', location);
 				continue;
 			}
 
-			console.log("In boundary box", location);
+			console.log('In boundary box', location);
 
 			// Check for the nearest Street View
 			const r = await fetch(
@@ -322,7 +406,7 @@ export class Round {
 				}
 			}
 			if (!found) {
-				console.log("Not in boundary box", location);
+				console.log('Not in boundary box', location);
 				continue;
 			}
 
@@ -361,11 +445,18 @@ export class Round {
 			}
 		}
 
-		this.broadcast('newLocation', JSON.stringify({...this.currentLocation, round: this.requiredRoundNumber + 1, totalRounds: this.requiredRoundNumber}));
+		this.broadcast(
+			'newLocation',
+			JSON.stringify({
+				...this.currentLocation,
+				round: this.requiredRoundNumber + 1,
+				totalRounds: this.requiredRoundNumber
+			})
+		);
 	}
 
 	async newRound() {
-		console.log("Starting new round");
+		console.log('Starting new round');
 		if (this.timer > 0) {
 			// Next round has already been started
 			// Prevents spam clicking the "Next game" button
@@ -376,10 +467,10 @@ export class Round {
 		if (this.state > this.requiredRoundNumber && this.isTournament) {
 			await prisma.competitionRound.update({
 				where: {
-					id: this.tournamentRoundId,
+					id: this.tournamentRoundId
 				},
 				data: {
-					state: -1000,
+					state: -1000
 				}
 			});
 			await this.results();
@@ -390,10 +481,10 @@ export class Round {
 		if (this.isTournament) {
 			await prisma.competitionRound.update({
 				where: {
-					id: this.tournamentRoundId,
+					id: this.tournamentRoundId
 				},
 				data: {
-					state: this.state,
+					state: this.state
 				}
 			});
 		}
@@ -406,6 +497,14 @@ export class Round {
 			}
 			this.timer--;
 			this.broadcast('countdown', JSON.stringify({ time: this.timer }));
+			if (this.roundType === 1 && this.revealLetters && this.timer % Math.floor((this.startTime+10)/this.flagQueue[this.flagQueue.length-1].name.length) === 0) {
+				let l = -1;
+				while (l < 0 || this.letters[l*2] != "_") {
+					l = Math.round(getRandomNumber(0, this.flagQueue[this.flagQueue.length-1].name.length-1));
+				}
+				this.letters = replaceAt(this.letters, l*2, this.flagQueue[this.flagQueue.length-1].name[l]);
+				this.broadcast('locationName', this.letters);
+			}
 			if (this.timer > 0) {
 				return;
 			}
@@ -424,14 +523,19 @@ export class Round {
 
 		clearInterval(this.timerFunction!);
 
-		// max diff distance should be 1000 kilometers
-		const mapDistance = haversine(
+		let mapDistance = 0;
+		if (this.roundType === 1) {
+			mapDistance = 30000;
+		} else {
+			// max diff distance should be 1000 kilometers
+			mapDistance = haversine(
 				{ lat: this.boundaryBox[0], lng: this.boundaryBox[1] },
 				{
 					lat: this.boundaryBox[2],
 					lng: this.boundaryBox[3]
 				}
 			);
+		}
 
 		const results = [];
 		for (const key in this.clients) {
@@ -445,6 +549,7 @@ export class Round {
 					distance: -1,
 					newScore: this.clients[key].score,
 					latLng: null,
+					municipality: ''
 				});
 				continue;
 			}
@@ -452,6 +557,26 @@ export class Round {
 			const distance = haversine(client.lastGuess, this.currentLocation);
 			const score = Math.round(5000 * Math.pow(Math.E, -10 * (distance / mapDistance)));
 			this.clients[key].score += score;
+
+			let municipality = '';
+			if (this.roundType === 1) {
+				for (let i = 0; i < OBCINE_GEOJSON['features'].length; i++) {
+					const obcina: number[][][] = OBCINE_GEOJSON['features'][i]['geometry']['coordinates'];
+					let found = false;
+					for (let i = 0; i < obcina!.length; i++) {
+						console.log(classifyPoint(obcina[i], [client.lastGuess.lat, client.lastGuess.lng]))
+						if (classifyPoint(obcina[i], [client.lastGuess.lng, client.lastGuess.lat]) == -1) {
+							found = true;
+							break;
+						}
+					}
+					if (found) {
+						municipality = OBCINE_GEOJSON['features'][i]['properties']['OB_UIME'];
+						break;
+					}
+				}
+			}
+
 			results.push({
 				userId: key,
 				username: client.username,
@@ -459,7 +584,8 @@ export class Round {
 				addedScore: score,
 				distance: distance,
 				newScore: this.clients[key].score,
-				latLng: client.lastGuess
+				latLng: client.lastGuess,
+				municipality: municipality,
 			});
 
 			if (this.isTournament) {
@@ -492,6 +618,8 @@ export class Round {
 			distance: -1,
 			newScore: -1,
 			latLng: this.currentLocation,
+			municipality:
+				this.flagQueue.length !== 0 ? this.flagQueue[this.flagQueue.length - 1].name : ''
 		});
 
 		console.log('Broadcasting results', results);

@@ -17,7 +17,7 @@
 			<div style="width: 6px"></div>
 			<a style="font-size: 28px;" href="/">Pinpointer</a>
 			<div style="width: 6px"></div>
-			<span style="font-size: 20px; color: gray;">v1.0.1</span>
+			<span style="font-size: 20px; color: gray;">v1.0.2</span>
 
 			<div class="w-10"></div>
 
@@ -35,7 +35,7 @@
 			</nav>
 
 			<div class="ml-auto flex items-center space-x-4">
-				<Button on:click={toggleMode} variant="outline" size="icon">
+				<Button onclick={toggleMode} variant="outline" size="icon">
 					<Sun
 						class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"
 					/>

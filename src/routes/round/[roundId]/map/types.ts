@@ -5,5 +5,6 @@ export interface RoundResult {
 	addedScore: number;
 	newScore: number;
 	distance: number;
+	municipality: string;
 	latLng: { lat: number; lng: number } | null;
 }

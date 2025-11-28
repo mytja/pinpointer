@@ -141,6 +141,9 @@ export const actions = {
 			true,
 			true,
 			true,
+			round.roundType,
+			round.showMunicipalityLetters,
+			round.showGeojson,
 		);
 		await rounds[roundId].initialize();
 

@@ -11,8 +11,10 @@
 		roundId: string;
 		roundResults: Readable<RoundResult[]>;
 		boundaryBox: number[];
+		roundType: number;
+		showGeojson: boolean;
 	}
-	let { guess, roundId, roundResults, boundaryBox }: MyProps = $props();
+	let { guess, roundId, roundResults, boundaryBox, roundType, showGeojson }: MyProps = $props();
 
 	let locked = $state(false);
 
@@ -37,7 +39,9 @@
 	}
 
 	function handleMouseUp() {
+		if (!isDragging) return;
 		isDragging = false;
+		console.log("Stopping dragging");
 
 		const rect = draggableEl.getBoundingClientRect();
 		const middlePoint = windowWidth / 2;
@@ -59,19 +63,8 @@
 
 	function handleMouseDown() {
 		isDragging = true;
+		console.log("Dragging");
 	}
-
-	// Update window dimensions on resize
-	/*window.addEventListener("resize", () => {
-		windowWidth = window.innerWidth;
-		windowHeight = window.innerHeight;
-		if (posX !== 0) {
-			const rect = draggableEl.getBoundingClientRect();
-			posX = windowWidth - rect.width;
-			posY = windowHeight - rect.height;
-			console.log("pos", posX, posY)
-		}
-	});*/
 
 	let marker: google.maps.marker.AdvancedMarkerElement | null = null;
 	let map: google.maps.Map | undefined;
@@ -94,6 +87,10 @@
 			fullscreenControl: true,
 			zoomControl: true,
 		});
+		if (roundType === 1 && showGeojson) {
+			map.data.loadGeoJson('/OB.geojson');
+			map.data.setStyle({clickable:false});
+		}
 		fitToBBox();
 
 		// HACKY AS FUCK
@@ -163,7 +160,7 @@
 
 <div
 	bind:this={draggableEl}
-	class="draggable"
+	class="draggable {roundType === 1 ? 'draggable-size-m' : 'draggable-size-s'}"
 	style={posX !== -1 ? `left: ${posX}px; top: ${posY}px` : style}
 	onmouseup={handleMouseUp}
 	onmousemove={handleMouseMove}
@@ -179,7 +176,7 @@
 	</div>
 	<div id="map"></div>
 	{#if !locked}
-		<Button on:click={async () => {
+		<Button onclick={async () => {
 			if (marker === null) return;
 			locked = true;
 			await fetch(`/round/${roundId}/guessLock`, {method: "POST"})
@@ -196,11 +193,19 @@
         user-select: none; /* Prevent text selection while dragging */
 		}
 
+		.draggable-size-s {
+        width: 500px;
+        height: 400px;
+		}
+
+		.draggable-size-m {
+        width: 600px;
+        height: 500px;
+		}
+
     .draggable {
 				z-index: 10;
         position: absolute;
-        width: 500px;
-        height: 400px;
         background-color: lightblue;
         cursor: default; /* Default cursor for the whole div */
         display: flex;

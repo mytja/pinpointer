@@ -3,6 +3,13 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Label } from '$lib/components/ui/label';
 	import { Switch } from '$lib/components/ui/switch';
+	import * as Select from "$lib/components/ui/select/index.js";
+
+	const ROUND_TYPES = [
+		"Normal round",
+		"Slovenian municipalities",
+	];
+	let value = "0";
 </script>
 
 <div style="padding: 20px">
@@ -30,6 +37,42 @@
 			<Input type="text" name="location" placeholder="Round location" class="max-w-xl" />
 			<Label for="location">Round location</Label>
 			<div style="height: 15px;"></div>
+
+			<Select.Root type="single" name="roundType" bind:value>
+				<Select.Trigger class="max-w-xl">
+					{ROUND_TYPES[+value]}
+				</Select.Trigger>
+				<Select.Content>
+					<Select.Group>
+						<Select.Item
+							value="0"
+							label="Normal round"
+						>
+							Normal round
+						</Select.Item>
+						<Select.Item
+							value="1"
+							label="Slovenian municipalities"
+						>
+							Slovenian municipalities
+						</Select.Item>
+					</Select.Group>
+				</Select.Content>
+			</Select.Root>
+			<div style="height: 15px;"></div>
+
+			<div class="flex items-center space-x-2">
+				<Switch name="municipalityLetters" id="municipalityLetters" checked={false} />
+				<Label for="municipalityLetters">Slowly reveal municipality letters?</Label>
+			</div>
+			<div style="height: 10px;"></div>
+
+			<div class="flex items-center space-x-2">
+				<Switch name="showGeojson" id="showGeojson" checked />
+				<Label for="showGeojson">Show GeoJSON?<sup>1</sup></Label>
+			</div>
+			<span style="color: lightgrey; font-size: 0.8em;"><sup>1</sup>GeoJSON is a feature that aids by showing an additional map to the user. It is currently only in use within the Slovenian municipalities gamemode, where it overlays municipality borders over the map.</span>
+			<div style="height: 10px;"></div>
 
 			<!--<div class="flex items-center space-x-2">
 				<Switch name="canMove" id="canMove" checked />

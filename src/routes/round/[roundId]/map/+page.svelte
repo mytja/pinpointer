@@ -32,6 +32,12 @@
 			return previous;  // This will be the new value of the store
 		}
 	);
+	const newFlag = s.select('newFlag').json(
+		function or({ previous }) {
+			return previous;  // This will be the new value of the store
+		}
+	);
+	const locationName = s.select('locationName');
 	//const roundDetails = writable({ lat: 46.822498228533284, lng: 16.08066758727155 });
 	const time = s.select('countdown').json(
 		function or({ previous }) {
@@ -58,9 +64,9 @@
 		if (value.time == 15) audio1.play();
 	})
 
-	roundDetails.subscribe((value) => {
+	function newRound(value: any) {
+		if (value === null) return false;
 		console.log('Clearing details');
-		if (value === null) return;
 		if (value.round > value.totalRounds) {
 			// konec turnirja
 			if (data.competitionId === "") {
@@ -68,9 +74,28 @@
 				return;
 			}
 			window.location.href = `/competition/${data.competitionId}`;
-			return;
+			return false;
 		}
+		return true;
+	}
+
+	let roundNumber = $state(0);
+	let totalRounds = $state(0);
+
+	roundDetails.subscribe((value) => {
+		console.log("Round details");
+		if (!newRound(value)) return;
 		hideRoundDetails = true;
+		roundNumber = value.round;
+		totalRounds = value.totalRounds;
+	});
+
+	newFlag.subscribe((value) => {
+		console.log("New flag", value);
+		if (!newRound(value)) return;
+		hideRoundDetails = true;
+		roundNumber = value.round;
+		totalRounds = value.totalRounds;
 	});
 
 	roundResults.subscribe((value) => {
@@ -107,16 +132,16 @@
 		</section>
 	</div>
 {:else}
-{#if $roundDetails !== null}
+{#if $roundDetails !== null || $newFlag !== null}
 	<ResultsMap isOwner={data.isOwner} roundResults={$roundResults} hideRoundDetails={hideRoundDetails}
-							roundId={data.roundId} roundNumber={$roundDetails.round} roundCount={$roundDetails.totalRounds} />
+							roundId={data.roundId} roundNumber={roundNumber} roundCount={totalRounds} roundType={data.roundType} />
 	<div class="map-page">
 		<div id="map-results-timer">
 			<div id="map-results-timer-child" style="position: absolute; top: 50px; right: 5px; z-index: 10; width: 300px;">
 				{#if $time !== null}
 					<Card.Root style={($time.time * 100) / data.startTime <= 15 ? "border-color: red; border-width: 5px;" : ""}>
 						<Card.Header>
-							<Card.Title>Time remaining ({$time.time}s) – {$roundDetails.round}/{$roundDetails.totalRounds}</Card.Title>
+							<Card.Title>Time remaining ({$time.time}s) – {roundNumber}/{totalRounds}</Card.Title>
 							<Card.Description>
 								{#if data.isTournament}Tournament game{:else}Friendly game{/if}
 								<Progress value={($time.time * 100) / data.startTime} />
@@ -126,15 +151,17 @@
 										<b style={client.locked ? "color: green;" : ""}>@{client.username}</b> – {client.score}<br>
 								{/each}
 								<br>
-								<Button on:click={() => reset.set($reset++)}>Pojdi nazaj na prvotno pozicijo</Button>
+								{#if data.roundType !== 1}
+									<Button onclick={() => reset.set($reset++)}>Pojdi nazaj na prvotno pozicijo</Button>
+								{/if}
 							</Card.Content>
 						</Card.Header>
 					</Card.Root>
 				{/if}
 			</div>
 		</div>
-		<StreetView roundDetails={roundDetails} reset={reset} canMove={data.canMove} canRotate={data.canRotate} canZoom={data.canZoom} />
-		<DraggableMap roundId={data.roundId} guess={$guess} roundResults={roundResults} boundaryBox={data.boundaryBox} />
+		<StreetView roundDetails={roundDetails} newFlag={newFlag} roundType={data.roundType} reset={reset} canMove={data.canMove} canRotate={data.canRotate} canZoom={data.canZoom} locationName={locationName} />
+		<DraggableMap roundId={data.roundId} guess={$guess} roundResults={roundResults} boundaryBox={data.boundaryBox} roundType={data.roundType} showGeojson={data.showGeojson} />
 	</div>
 {:else}
 	<div style="padding: 20px;">
@@ -149,7 +176,8 @@
 			{/each}
 			<br>
 			{#if data.isOwner}
-				<Button on:click={async () => {
+				<Button onclick={async () => {
+					console.log("Začenjam rundo");
 					await fetch(`/round/${data.roundId}/nextRound`, {method: "POST"})
 				}}>Start the competition
 				</Button>

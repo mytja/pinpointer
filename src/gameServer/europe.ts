@@ -67,6 +67,13 @@ export const EUROPE_BOUNDING_BOX = [
 	71.2601779512,
 ];
 
+export const SLOVENIA_BOUNDING_BOX = [
+	13.3754696,
+	45.4214681,
+	16.5967003,
+	46.8766816,
+]
+
 export const EUROPE = [
 	[
 		[
