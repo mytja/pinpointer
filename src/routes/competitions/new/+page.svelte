@@ -22,7 +22,7 @@
 			<div style="height: 15px;"></div>
 
 			<div class="flex items-center space-x-2">
-				<Switch name="private" id="private" />
+				<Switch name="private" id="private" checked={false} />
 				<Label for="airplane-mode">Is competition private?</Label>
 			</div>
 
