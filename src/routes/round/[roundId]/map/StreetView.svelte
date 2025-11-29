@@ -5,7 +5,7 @@
 
 	interface MyProps {
 		roundDetails: Readable<{ lat: number, lng: number }>;
-		newFlag: Readable<string>;
+		newFlag: Readable<{ flag: string }>;
 		locationName: Readable<string>;
 		reset: Readable<number>;
 		roundType: number;
@@ -44,8 +44,9 @@
 
 	let flagLink = $state("");
 	newFlag.subscribe((value) => {
+		if (value === null) return;
 		if (roundType !== 1) return; // Slovenian municipalities
-		console.log('novi round flag detailsi');
+		console.log('novi round flag detailsi', value);
 		flagLink = value.flag;
 	});
 
@@ -58,13 +59,13 @@
 {#if roundType === 1}
 	<div style="display: inline-flex; align-items: center; justify-content: center; flex-direction: column;">
 		<div style="height: 40px;"></div>
-		<span class="text-3xl" style="text-align: center;">Poišči občinsko hišo slovenske občine<br>z naslednjim grbom</span>
-		<div style="height: 50px;"></div>
+		<span class="text-2xl" style="text-align: center;">Poišči občinsko hišo slovenske občine<br>z naslednjim grbom</span>
+		<div style="height: 40px;"></div>
 		{#if $locationName !== undefined && $locationName !== ""}
-			<span class="text-5xl font-bold" style="text-align: center;">{$locationName}</span>
+			<span class="text-4xl font-bold" style="text-align: center; white-space: pre-line;">{$locationName.replaceAll("   ", '\n')}</span>
 		{/if}
-		<div style="height: 50px;"></div>
-		<img src={flagLink} alt="Občinski grb" style="height: 400px;">
+		<div style="height: 40px;"></div>
+		<img src={flagLink} alt="Občinski grb" style="height: 350px;">
 	</div>
 {/if}
 <div id="street-view-map"></div>

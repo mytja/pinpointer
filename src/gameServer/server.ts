@@ -25,6 +25,7 @@ type LatLng = { lat: number; lng: number };
 export const rounds: Record<string, Round> = {};
 
 function replaceAt(original: string, index: number, replacement: string) {
+	if (replacement === undefined || replacement === null) replacement = "";
 	return original.substring(0, index) + replacement + original.substring(index + replacement.length);
 }
 
@@ -185,15 +186,33 @@ export class Round {
 		setTimeout(() => this.sendClients(), 50);
 		const { response, clientId } = this.clients[userId].newClient();
 		if (this.state >= 0) {
-			setTimeout(
-				() =>
-					this.clients[userId].sendToSpecificClient(
-						clientId,
-						'newLocation',
-						JSON.stringify(this.locationMessage())
-					),
-				50
-			);
+			if (this.roundType === 0) {
+				setTimeout(
+					() =>
+						this.clients[userId].sendToSpecificClient(
+							clientId,
+							'newLocation',
+							JSON.stringify(this.locationMessage())
+						),
+					50
+				);
+			} else if (this.roundType === 1) {
+				setTimeout(
+					() =>
+						this.clients[userId].sendToSpecificClient(
+							clientId,
+							'newFlag',
+							JSON.stringify(this.flagMessage())
+						),
+					50
+				);
+				if (this.revealLetters) {
+					setTimeout(
+						() => this.clients[userId].sendToSpecificClient(clientId, 'locationName', this.letters),
+						50
+					);
+				}
+			}
 		}
 		return response;
 	}
@@ -329,7 +348,7 @@ export class Round {
 				this.broadcast('locationName', this.letters);
 			}
 			for (let i = 0; i < flag.name.length; i++) {
-				this.letters += "_";
+				this.letters += flag.name[i] === " " ? " " : "_";
 				if (i != flag.name.length - 1) this.letters += " ";
 			}
 			this.sendFlagMessage();
@@ -499,7 +518,8 @@ export class Round {
 			this.broadcast('countdown', JSON.stringify({ time: this.timer }));
 			if (this.roundType === 1 && this.revealLetters && this.timer % Math.floor((this.startTime+10)/this.flagQueue[this.flagQueue.length-1].name.length) === 0) {
 				let l = -1;
-				while (l < 0 || this.letters[l*2] != "_") {
+				const includes = this.letters.includes("_");
+				while ((l < 0 || this.letters[l*2] != "_") && includes) {
 					l = Math.round(getRandomNumber(0, this.flagQueue[this.flagQueue.length-1].name.length-1));
 				}
 				this.letters = replaceAt(this.letters, l*2, this.flagQueue[this.flagQueue.length-1].name[l]);
@@ -555,7 +575,10 @@ export class Round {
 			}
 			const scoreBefore = client.score;
 			const distance = haversine(client.lastGuess, this.currentLocation);
-			const score = Math.round(5000 * Math.pow(Math.E, -10 * (distance / mapDistance)));
+			let score = Math.round(5000 * Math.pow(Math.E, -10 * (distance / mapDistance)));
+			if (this.roundType === 1 && distance < 15) {
+				score = 5000;
+			}
 			this.clients[key].score += score;
 
 			let municipality = '';
