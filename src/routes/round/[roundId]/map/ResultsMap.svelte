@@ -133,8 +133,10 @@
 			<div style="flex-grow: 1; height: 85vh; padding-left: 20px;">
 				<span style="font-size: 2em;">Results ({roundNumber}/{roundCount})</span>
 				<br>
-				<span style="font-size: 1.5em; font-weight: bold;">Občina {munSol}</span>
-				<br><br>
+				{#if roundType === 1}
+					<span style="font-size: 1.5em; font-weight: bold;">Občina {munSol}</span>
+					<br><br>
+				{/if}
 				<table class="striped" style="width: 100%;">
 					<thead>
 					<tr>
