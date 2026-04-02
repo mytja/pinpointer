@@ -5,7 +5,6 @@
 	import { Button } from '$lib/components/ui/button';
 	import sanitizeHtml from 'sanitize-html';
 	import { env } from '$env/dynamic/public';
-	import type { Readable } from 'svelte/store';
 
 	interface MyProps {
 		isOwner: boolean;
@@ -121,23 +120,75 @@
       table-layout: fixed;
 			text-align: center;
 	}
+
+	.results-shell {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		flex-direction: column;
+	}
+
+	.results-overlay {
+		width: 100%;
+		height: 100%;
+		z-index: 50;
+		position: absolute;
+		top: 0;
+		left: 0;
+		overflow: auto;
+		padding: 12px;
+	}
+
+	.results-content {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
+	#results-map {
+		height: 50vh;
+		width: 100%;
+	}
+
+	.results-table {
+		overflow-x: auto;
+	}
+
+	@media (min-width: 1024px) {
+		.results-overlay {
+			padding: 20px;
+		}
+
+		.results-content {
+			flex-direction: row;
+			gap: 20px;
+		}
+
+		#results-map {
+			height: 85vh;
+			min-width: 60vw;
+		}
+
+		.results-side {
+			height: 85vh;
+		}
+	}
 </style>
 
-<div style="display:flex; justify-content:center; align-items:center; flex-direction: column; visibility: {hideRoundDetails ? 'hidden' : 'visible'}">
-	<div
-		style="width: 100vw; height: 100%; z-index: 50; position: absolute; top: 0; left: 0; overflow: hidden; padding: 20px;"
-		class="bg-card">
+<div class="results-shell" style:visibility={hideRoundDetails ? 'hidden' : 'visible'}>
+	<div class="results-overlay bg-card">
 		<div style="height: 12px;"></div>
-		<div style="display: flex; flex-direction: row;">
-			<div id="results-map" style="height: 85vh; min-width: 60vw;"></div>
-			<div style="flex-grow: 1; height: 85vh; padding-left: 20px;">
-				<span style="font-size: 2em;">Results ({roundNumber}/{roundCount})</span>
+		<div class="results-content">
+			<div id="results-map"></div>
+			<div class="results-side flex-grow lg:pl-5">
+				<span class="text-2xl sm:text-3xl">Results ({roundNumber}/{roundCount})</span>
 				<br>
 				{#if roundType === 1}
-					<span style="font-size: 1.5em; font-weight: bold;">Občina {munSol}</span>
+					<span class="text-xl font-bold sm:text-2xl">Obcina {munSol}</span>
 					<br><br>
 				{/if}
-				<table class="striped" style="width: 100%;">
+				<div class="results-table">
+					<table class="striped w-full min-w-[700px]">
 					<thead>
 					<tr>
 						<th scope="col">Username</th>
@@ -168,7 +219,8 @@
 						{/each}
 					{/if}
 					</tbody>
-				</table>
+					</table>
+				</div>
 			</div>
 		</div>
 		{#if isOwner}

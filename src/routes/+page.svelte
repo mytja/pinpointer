@@ -8,7 +8,7 @@
 	/** @type {import('./$types').PageData} */
 	export let data;
 
-	let roundId = "";
+	let roundId = '';
 </script>
 
 <svelte:head>
@@ -16,36 +16,31 @@
 	<meta name="description" content="Pinpointer home" />
 </svelte:head>
 
-<div style="padding: 20px;">
-	<section>
+<div class="p-4 sm:p-6">
+	<section class="mx-auto flex w-full max-w-screen-2xl flex-col gap-6">
 		<h1 class="scroll-m-20 text-3xl font-extrabold tracking-tight">
 			Welcome, {data.username}!
 		</h1>
 
-		<br>
-		<Button href="/quick">Create a quick match</Button>
-		<br><br>
-		<div class="inline-block" style="width: 100%;">
-			<Input type="text" bind:value={roundId} name="username" placeholder="Join a quick match with an invite code" class="max-w-xl inline" on:keydown={(event) => {
+		<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+			<Button href="/quick" class="w-full sm:w-auto">Create a quick match</Button>
+			<div class="flex w-full flex-col gap-2 sm:max-w-2xl sm:flex-row">
+				<Input type="text" bind:value={roundId} name="username" placeholder="Join a quick match with an invite code" class="w-full" on:keydown={(event) => {
 				if (event.key !== 'Enter') return;
-				document.location.href = `/round/${roundId}/map`
+				document.location.href = `/round/${roundId}/map`;
 			}} />
-			<Button href="/round/{roundId}/map" class="inline">Join a quick match</Button>
+				<Button href="/round/{roundId}/map" class="w-full sm:w-auto">Join a quick match</Button>
+			</div>
 		</div>
 
-		<br><br>
 		<hr>
 
-		<br>
-		<Button href="/competitions/new">Create a new competition</Button>
-		<br><br>
+		<Button href="/competitions/new" class="w-full sm:w-fit">Create a new competition</Button>
 
 		{#if data.myCompetitions.length !== 0}
 			Owned competitions:
 
-			<div style="height: 7px"></div>
-
-			<div class="grid grid-cols-4 gap-4">
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 				{#each data.myCompetitions as competition}
 					<Card.Root>
 						<Card.Header>
@@ -59,15 +54,12 @@
 				{/each}
 			</div>
 
-			<div style="height: 15px;"></div>
 		{/if}
 
 		{#if data.enrolledCompetitions.length !== 0}
 			Enrolled competitions:
 
-			<div style="height: 7px"></div>
-
-			<div class="grid grid-cols-4 gap-4">
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 				{#each data.enrolledCompetitions as competition}
 					<Card.Root>
 						<Card.Header>
@@ -81,15 +73,12 @@
 				{/each}
 			</div>
 
-			<div style="height: 15px;"></div>
 		{/if}
 
 		{#if data.publicCompetitions.length !== 0}
 			Public competitions:
 
-			<div style="height: 7px"></div>
-
-			<div class="grid grid-cols-4 gap-4">
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 				{#each data.publicCompetitions as competition}
 					<Card.Root>
 						<Card.Header>
@@ -105,7 +94,6 @@
 				{/each}
 			</div>
 
-			<div style="height: 15px;"></div>
 		{/if}
 
 	</section>

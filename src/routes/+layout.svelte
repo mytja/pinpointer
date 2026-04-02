@@ -17,17 +17,20 @@
 <style>
     .app {
         min-height: 100vh;
-        width: 100vw;
+        width: 100%;
         display: flex;
         flex-direction: column;
+        overflow-x: hidden;
     }
 
     main {
-        width: 100vw;
+        width: 100%;
+        max-width: 100%;
         flex: 1;
         margin: 0;
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
+        overflow-x: hidden;
     }
 </style>

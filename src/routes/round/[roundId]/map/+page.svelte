@@ -7,9 +7,7 @@
 	import * as Card from '$lib/components/ui/card';
 	import { Progress } from '$lib/components/ui/progress';
 	import { writable } from 'svelte/store';
-	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import ResultsMap from './ResultsMap.svelte';
-	import type { RoundResult } from './types';
 	import { onMount } from 'svelte';
 	import { Loader } from '@googlemaps/js-api-loader';
 	import { env } from '$env/dynamic/public';
@@ -111,7 +109,7 @@
 
 	onMount(async () => {
 		const loader = new Loader({
-			apiKey: env.PUBLIC_GOOGLE_MAPS_SDK_KEY,
+			apiKey: env.PUBLIC_GOOGLE_MAPS_SDK_KEY ?? '',
 			version: 'weekly'
 		});
 		await loader.importLibrary('maps') as google.maps.MapsLibrary;
@@ -126,7 +124,7 @@
 </svelte:head>
 
 {#if !loadedGoogleMaps}
-	<div style="padding: 20px;">
+	<div class="p-4 sm:p-6">
 		<section>
 			<h2 class="scroll-m-20 text-3xl font-bold tracking-tight">Google Maps SDK is loading... This shouldn't take more than a few seconds.</h2>
 		</section>
@@ -137,7 +135,7 @@
 							roundId={data.roundId} roundNumber={roundNumber} roundCount={totalRounds} roundType={data.roundType} />
 	<div class="map-page">
 		<div id="map-results-timer">
-			<div id="map-results-timer-child" style="position: absolute; top: 50px; right: 5px; z-index: 10; width: 300px;">
+			<div id="map-results-timer-child" class="timer-card-wrapper">
 				{#if $time !== null}
 					<Card.Root style={($time.time * 100) / data.startTime <= 15 ? "border-color: red; border-width: 5px;" : ""}>
 						<Card.Header>
@@ -164,11 +162,11 @@
 		<DraggableMap roundId={data.roundId} guess={$guess} roundResults={roundResults} boundaryBox={data.boundaryBox} roundType={data.roundType} showGeojson={data.showGeojson} />
 	</div>
 {:else}
-	<div style="padding: 20px;">
+	<div class="p-4 sm:p-6">
 		<section>
 			<h2 class="scroll-m-20 text-3xl font-bold tracking-tight">Waiting for start</h2>
 			{#if !data.isTournament}
-				Invite your friends with this code: <span style="font-size: 32px; font-weight: bold; color: darkgrey;">{data.roundId}</span>
+				Invite your friends with this code: <span class="text-2xl font-bold text-muted-foreground sm:text-3xl">{data.roundId}</span>
 				<br><br>
 			{/if}
 			{#each $clients as client}
@@ -193,5 +191,24 @@
         height: auto;
         display: flex;
         flex-direction: column;
+		position: relative;
+		min-height: calc(100dvh - 64px);
+	}
+
+	.timer-card-wrapper {
+		position: absolute;
+		top: 50px;
+		right: 8px;
+		z-index: 10;
+		width: min(320px, calc(100vw - 16px));
+	}
+
+	@media (max-width: 768px) {
+		.timer-card-wrapper {
+			top: 8px;
+			left: 8px;
+			right: 8px;
+			width: auto;
+		}
     }
 </style>

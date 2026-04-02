@@ -24,14 +24,15 @@
 
 	let posX = $state(-1);
 	let posY = $state(0);
-	let style = $state('bottom: 0; right: 0;');
+	let style = $state('bottom: 0.75rem; right: 0.75rem;');
 	let isMapHovered = $state(false);
 	let cornerPosition = $state<'left' | 'right'>('right');
+	let canHover = $state(false);
 	let isDragging = false;
 
 	let draggableEl: HTMLDivElement;
 
-	function handleMouseMove(event: MouseEvent) {
+	function handlePointerMove(event: PointerEvent) {
 		if (isDragging) {
 			const rect = draggableEl.getBoundingClientRect();
 			posX = event.clientX - rect.width / 2;
@@ -39,10 +40,9 @@
 		}
 	}
 
-	function handleMouseUp() {
+	function handlePointerUp() {
 		if (!isDragging) return;
 		isDragging = false;
-		console.log('Stopping dragging');
 
 		const rect = draggableEl.getBoundingClientRect();
 		const currentWindowWidth = window.innerWidth;
@@ -53,12 +53,12 @@
 		if (posX + rect.width / 2 < middlePoint) {
 			// Snap to bottom-left
 			posX = -1;
-			style = 'bottom: 0; left: 0;';
+			style = 'bottom: 0.75rem; left: 0.75rem;';
 			cornerPosition = 'left';
 		} else {
 			// Snap to bottom-right
 			posX = -1;
-			style = 'bottom: 0; right: 0;';
+			style = 'bottom: 0.75rem; right: 0.75rem;';
 			cornerPosition = 'right';
 		}
 
@@ -66,17 +66,16 @@
 		posY = currentWindowHeight - rect.height;
 	}
 
-	function handleMouseDown() {
+	function handlePointerDown(event: PointerEvent) {
+		(event.currentTarget as HTMLElement)?.setPointerCapture?.(event.pointerId);
 		isDragging = true;
-		console.log('Dragging');
 	}
 
 	let marker: google.maps.marker.AdvancedMarkerElement | null = null;
 	let map: google.maps.Map | undefined;
 
 	onMount(async () => {
-		console.log('draggableEl', draggableEl);
-
+		canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
 		const { AdvancedMarkerElement } = await google.maps.importLibrary('marker') as google.maps.MarkerLibrary;
 		map = new google.maps.Map(document.getElementById('map') as HTMLElement, {
@@ -94,8 +93,7 @@
 		}
 		fitToBBox();
 
-		// HACKY AS FUCK
-		// FUCK EM BROWSERS
+		// Keep timer card visible both in and outside fullscreen map mode.
 		const mapChild = document.getElementById('map')!.firstChild;
 		mapChild?.addEventListener('fullscreenchange', () => {
 			const isExiting = document.fullscreenElement === null;
@@ -164,17 +162,18 @@
 	class="draggable"
 	class:draggable-size-m={roundType === 1}
 	class:draggable-size-s={roundType !== 1}
-	class:draggable-expanded-left={isMapHovered && cornerPosition === 'left'}
-	class:draggable-expanded-right={isMapHovered && cornerPosition === 'right'}
+	class:draggable-expanded-left={canHover && isMapHovered && cornerPosition === 'left'}
+	class:draggable-expanded-right={canHover && isMapHovered && cornerPosition === 'right'}
 	style={posX !== -1 ? `left: ${posX}px; top: ${posY}px` : style}
-	onmouseup={handleMouseUp}
-	onmousemove={handleMouseMove}
+	onpointerup={handlePointerUp}
+	onpointermove={handlePointerMove}
+	onpointercancel={handlePointerUp}
 	id="draggable-element"
 	role="button"
 	tabindex="0">
 	<div
 		class="handle"
-		onmousedown={handleMouseDown}
+		onpointerdown={handlePointerDown}
 		role="button"
 		tabindex="0">
 		Geolocate
@@ -188,7 +187,7 @@
 			if (marker === null) return;
 			locked = true;
 			await fetch(`/round/${roundId}/guessLock`, {method: "POST"})
-		}}>Lock in
+		}} class="m-2 w-auto self-end sm:w-auto">Lock in
 		</Button>
 	{/if}
 </div>
@@ -200,39 +199,40 @@
         padding: 10px;
         cursor: grab; /* Indicate draggable area */
         user-select: none; /* Prevent text selection while dragging */
+		touch-action: none;
     }
 
     .draggable-size-s {
-        width: 500px;
-        height: 400px;
+		width: min(92vw, 500px);
+		height: min(55vh, 400px);
     }
 
     .draggable-size-m {
-        width: 600px;
-        height: 500px;
+		width: min(92vw, 600px);
+		height: min(60vh, 500px);
     }
 
     .draggable-size-s.draggable-expanded-right {
-        width: 700px;
-        height: 550px;
+		width: min(95vw, 700px);
+		height: min(70vh, 550px);
         transform-origin: bottom right;
     }
 
     .draggable-size-m.draggable-expanded-right {
-        width: 800px;
-        height: 650px;
+		width: min(95vw, 800px);
+		height: min(75vh, 650px);
         transform-origin: bottom right;
     }
 
     .draggable-size-s.draggable-expanded-left {
-        width: 700px;
-        height: 550px;
+		width: min(95vw, 700px);
+		height: min(70vh, 550px);
         transform-origin: bottom left;
     }
 
     .draggable-size-m.draggable-expanded-left {
-        width: 800px;
-        height: 650px;
+		width: min(95vw, 800px);
+		height: min(75vh, 650px);
         transform-origin: bottom left;
     }
 
@@ -244,6 +244,8 @@
         display: flex;
         flex-direction: column;
         transition: width 0.2s ease, height 0.2s ease;
+		max-width: calc(100vw - 1.5rem);
+		max-height: calc(100vh - 1.5rem);
     }
 
     .draggable .handle:active {
@@ -255,4 +257,24 @@
         height: auto;
         width: 100%; /* The width is the width of the web page */
     }
+
+	@media (max-width: 768px) {
+		.draggable {
+			left: 0.5rem !important;
+			right: 0.5rem !important;
+			bottom: 0.5rem !important;
+			width: auto;
+			max-width: none;
+		}
+
+		.draggable-size-s,
+		.draggable-size-m,
+		.draggable-size-s.draggable-expanded-right,
+		.draggable-size-m.draggable-expanded-right,
+		.draggable-size-s.draggable-expanded-left,
+		.draggable-size-m.draggable-expanded-left {
+			width: 100%;
+			height: min(48vh, 420px);
+		}
+	}
 </style>

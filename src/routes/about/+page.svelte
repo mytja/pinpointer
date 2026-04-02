@@ -8,20 +8,17 @@
 	<meta name="description" content="About Pinpointer" />
 </svelte:head>
 
-<div style="padding: 20px;">
-	<section>
-		<div class="flex h-16 items-center px-4">
-			<MapPin
-				class="h-[50px] w-[50px] rotate-0 scale-100 transition-all"
-			/>
-			<div style="width: 6px"></div>
-			<span style="font-size: 50px">Pinpointer</span>
+<div class="p-4 sm:p-6">
+	<section class="mx-auto w-full max-w-screen-lg">
+		<div class="mb-4 flex items-center gap-2 px-1">
+			<MapPin class="h-9 w-9 rotate-0 scale-100 transition-all sm:h-12 sm:w-12" />
+			<span class="text-3xl font-semibold sm:text-5xl">Pinpointer</span>
 		</div>
-		<br>
-		A system for geoguessing tournament organization.
-		<br><br>
-		Copyright 2024-2025 Mitja Ševerkar. All rights reserved. Licensed under AGPLv3.
-		Source code is available on <a href="https://github.com/mytja/pinpointer" style="color: cadetblue;">GitHub</a>.
+		<p class="text-base sm:text-lg">A system for geoguessing tournament organization.</p>
+		<p class="mt-4 text-sm sm:text-base">
+			Copyright 2024-2025 Mitja Severkar. All rights reserved. Licensed under AGPLv3.
+			Source code is available on <a href="https://github.com/mytja/pinpointer" class="text-cyan-600 underline underline-offset-2">GitHub</a>.
+		</p>
 	</section>
 </div>
 
