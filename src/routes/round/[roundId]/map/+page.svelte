@@ -53,6 +53,9 @@
 
 	let hideRoundDetails: boolean = $state(true);
 	let showPlayers = $state(true);
+	let isMobile = $state(false);
+	let initializedDesktopDefaults = false;
+	let previousRoundForDefaults = $state(0);
 
 	time.subscribe((value) => {
 		if (value === null) return;
@@ -79,11 +82,21 @@
 	let roundNumber = $state(0);
 	let totalRounds = $state(0);
 
+	function applyResultsDefaults(forRoundStart: boolean) {
+		if (isMobile) {
+			showPlayers = false;
+			return;
+		}
+		if (forRoundStart) return;
+		if (initializedDesktopDefaults) return;
+		showPlayers = true;
+		initializedDesktopDefaults = true;
+	}
+
 	roundDetails.subscribe((value) => {
 		console.log("Round details");
 		if (!newRound(value)) return;
 		hideRoundDetails = true;
-		showPlayers = true;
 		roundNumber = value.round;
 		totalRounds = value.totalRounds;
 	});
@@ -92,7 +105,6 @@
 		console.log("New flag", value);
 		if (!newRound(value)) return;
 		hideRoundDetails = true;
-		showPlayers = true;
 		roundNumber = value.round;
 		totalRounds = value.totalRounds;
 	});
@@ -113,6 +125,15 @@
 	}
 
 	onMount(() => {
+		const mobileQuery = window.matchMedia('(max-width: 768px)');
+		const applyMobileState = (matches: boolean) => {
+			isMobile = matches;
+			applyResultsDefaults(false);
+		};
+		applyMobileState(mobileQuery.matches);
+		const onMobileChange = (event: MediaQueryListEvent) => applyMobileState(event.matches);
+		mobileQuery.addEventListener('change', onMobileChange);
+
 		const loadMaps = async () => {
 			const loader = new Loader({
 				apiKey: env.PUBLIC_GOOGLE_MAPS_SDK_KEY ?? '',
@@ -124,6 +145,17 @@
 		};
 
 		void loadMaps();
+
+		return () => {
+			mobileQuery.removeEventListener('change', onMobileChange);
+		};
+	});
+
+	$effect(() => {
+		if (roundNumber === 0) return;
+		if (previousRoundForDefaults === roundNumber) return;
+		previousRoundForDefaults = roundNumber;
+		applyResultsDefaults(true);
 	});
 </script>
 
@@ -235,10 +267,13 @@
 		position: absolute;
 		top: 3.5rem;
 		left: 0.5rem;
-		right: 0.5rem;
+		right: auto;
 		z-index: 16;
 		max-height: 110px;
 		overflow: auto;
+		width: fit-content;
+		max-width: min(360px, 40vw);
+		min-width: 180px;
 		padding: 0.9rem 1rem;
 		border-radius: 0.5rem;
 		background: hsl(var(--background) / 0.98);
@@ -263,6 +298,7 @@
 			right: 0.5rem;
 			z-index: 16;
 			max-height: 100px;
+			width: auto;
 			padding: 0.75rem;
 		}
     }

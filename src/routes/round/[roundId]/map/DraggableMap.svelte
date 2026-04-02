@@ -31,10 +31,11 @@
 	let style = $state('bottom: 0.75rem; right: 0.75rem;');
 	let isMapHovered = $state(false);
 	let cornerPosition = $state<'left' | 'right'>('right');
-	let canHover = $state(false);
 	let isMobile = $state(false);
 	let isCollapsed = $state(false);
 	let isDragging = false;
+	let initializedDesktopDefaults = false;
+	let previousRoundForDefaults = $state(0);
 
 	const ZOOM_TO = 8;
 	const ZOOM_ENABLED = false;
@@ -68,6 +69,7 @@
 	}
 
 	function handlePointerDown(event: PointerEvent) {
+		if (isMobile) return;
 		(event.currentTarget as HTMLElement)?.setPointerCapture?.(event.pointerId);
 		isDragging = true;
 	}
@@ -86,11 +88,16 @@
 	}
 
 	onMount(() => {
-		canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 		const mobileQuery = window.matchMedia('(max-width: 768px)');
 		const onMobile = (matches: boolean) => {
 			isMobile = matches;
-			if (!matches) isCollapsed = false;
+			if (matches) {
+				isCollapsed = true;
+				return;
+			}
+			if (initializedDesktopDefaults) return;
+			isCollapsed = false;
+			initializedDesktopDefaults = true;
 		};
 		onMobile(mobileQuery.matches);
 		const onMobileChange = (event: MediaQueryListEvent) => onMobile(event.matches);
@@ -148,6 +155,14 @@
 		setTimeout(() => google.maps.event.trigger(map!, 'resize'), 0);
 	});
 
+	$effect(() => {
+		if (roundNumber === 0) return;
+		if (previousRoundForDefaults === roundNumber) return;
+		previousRoundForDefaults = roundNumber;
+		if (!isMobile) return;
+		isCollapsed = true;
+	});
+
 	roundResults.subscribe(() => {
 		if (map === undefined || marker === null) return;
 		fitToBBox();
@@ -163,8 +178,8 @@
 	class:draggable-size-m={roundType === 1}
 	class:draggable-size-s={roundType !== 1}
 	class:draggable-collapsed={isCollapsed}
-	class:draggable-expanded-left={canHover && isMapHovered && cornerPosition === 'left'}
-	class:draggable-expanded-right={canHover && isMapHovered && cornerPosition === 'right'}
+	class:draggable-expanded-left={!isMobile && isMapHovered && cornerPosition === 'left'}
+	class:draggable-expanded-right={!isMobile && isMapHovered && cornerPosition === 'right'}
 	style={posX !== -1 ? `left: ${posX}px; top: ${posY}px` : style}
 	onpointerup={handlePointerUp}
 	onpointermove={handlePointerMove}
@@ -202,12 +217,13 @@
 
 <style>
 	.draggable .handle {
-		background-color: darkblue;
-		color: white;
+		background-color: #433878;
+		color: #f5f3ff;
 		padding: 10px;
 		cursor: grab;
 		user-select: none;
 		touch-action: none;
+		border-bottom: 1px solid #5b4e99;
 	}
 
 	.bottom-row {
@@ -215,8 +231,8 @@
 		gap: 0.5rem;
 		align-items: center;
 		padding: 0.5rem;
-		border-top: 1px solid rgba(255, 255, 255, 0.14);
-		background-color: rgba(24, 28, 36, 0.95);
+		border-top: 1px solid #6a5aa8;
+		background-color: #54458f;
 	}
 
 	.bottom-row-collapsed {
@@ -234,7 +250,7 @@
 	.timer-title {
 		font-size: 0.85rem;
 		font-weight: 600;
-		color: #f4f7ff;
+		color: #f5f3ff;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -242,7 +258,7 @@
 
 	.timer-subtitle {
 		font-size: 0.75rem;
-		color: #c8cfdb;
+		color: #ddd6fe;
 	}
 
 	.actions {
@@ -290,7 +306,7 @@
 	.draggable {
 		z-index: 10;
 		position: absolute;
-		background-color: lightblue;
+		background-color: hsl(var(--card));
 		cursor: default;
 		display: flex;
 		flex-direction: column;
@@ -299,9 +315,6 @@
 		max-height: calc(100vh - 1.5rem);
 	}
 
-	.draggable .handle:active {
-		cursor: grabbing;
-	}
 
 	#map {
 		flex: 1;

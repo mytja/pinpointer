@@ -182,11 +182,11 @@
 			<div id="results-map"></div>
 			<div class="results-side flex-grow lg:pl-5">
 				<span class="text-2xl sm:text-3xl">Results ({roundNumber}/{roundCount})</span>
-				<br>
 				{#if roundType === 1}
+					<br>
 					<span class="text-xl font-bold sm:text-2xl">Obcina {munSol}</span>
-					<br><br>
 				{/if}
+				<br><br>
 				<div class="results-table">
 					<table class="striped w-full min-w-[700px]">
 					<thead>
