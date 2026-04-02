@@ -12,8 +12,8 @@
 		canMove: boolean;
 		canRotate: boolean;
 		canZoom: boolean;
-	};
-	let { roundDetails, newFlag, locationName, roundType, reset, canMove, canRotate, canZoom }: MyProps = $props();
+	}
+	let { roundDetails, newFlag, locationName, roundType, reset }: MyProps = $props();
 
 	let panorama: google.maps.StreetViewPanorama | undefined;
 
@@ -57,23 +57,47 @@
 </script>
 
 {#if roundType === 1}
-	<div style="display: inline-flex; align-items: center; justify-content: center; flex-direction: column;">
-		<div style="height: 40px;"></div>
-		<span class="text-2xl" style="text-align: center;">Poišči občinsko hišo slovenske občine<br>z naslednjim grbom</span>
-		<div style="height: 40px;"></div>
+	<div class="municipality-view">
+		<span class="text-center text-2xl">Poisci obcinsko hiso slovenske obcine<br>z naslednjim grbom</span>
 		{#if $locationName !== undefined && $locationName !== ""}
-			<span class="text-4xl font-bold" style="text-align: center; white-space: pre-line;">{$locationName.replaceAll("   ", '\n')}</span>
+			<span class="location-name">{$locationName.replaceAll("   ", '\n')}</span>
 		{/if}
-		<div style="height: 40px;"></div>
-		<img src={flagLink} alt="Občinski grb" style="height: 350px;">
+		<img src={flagLink} alt="Obcinski grb" class="municipality-flag">
 	</div>
+{:else}
+	<div id="street-view-map"></div>
 {/if}
-<div id="street-view-map"></div>
 
 <style>
+	.municipality-view {
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+		padding: 1rem;
+		overflow: auto;
+	}
+
+	.location-name {
+		font-size: clamp(1.5rem, 5vw, 2.25rem);
+		font-weight: 700;
+		text-align: center;
+		white-space: pre-line;
+	}
+
+	.municipality-flag {
+		max-height: min(45vh, 350px);
+		max-width: min(90vw, 420px);
+		width: auto;
+		height: auto;
+	}
+
     #street-view-map {
         flex: 1;
-        height: auto;
+        min-height: 0;
         width: 100%; /* The width is the width of the web page */
     }
 </style>

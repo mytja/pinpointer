@@ -2,9 +2,12 @@
 	/* eslint-disable no-undef */
 	import { onMount } from 'svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { Progress } from '$lib/components/ui/progress';
 	import type { RoundResult } from './types';
 	import { env } from '$env/dynamic/public';
 	import type { Readable } from 'svelte/store';
+
+	type Countdown = { time: number } | null;
 
 	interface MyProps {
 		guess: { lat: number; lng: number };
@@ -13,57 +16,55 @@
 		boundaryBox: number[];
 		roundType: number;
 		showGeojson: boolean;
+		time: Readable<Countdown>;
+		isTournament: boolean;
+		startTime: number;
+		roundNumber: number;
+		totalRounds: number;
 	}
 
-	let { guess, roundId, roundResults, boundaryBox, roundType, showGeojson }: MyProps = $props();
+	let { guess, roundId, roundResults, boundaryBox, roundType, showGeojson, time, isTournament, startTime, roundNumber, totalRounds }: MyProps = $props();
 
 	let locked = $state(false);
-
-	const ZOOM_TO = 8;
-	const ZOOM_ENABLED = false;
-
 	let posX = $state(-1);
 	let posY = $state(0);
 	let style = $state('bottom: 0.75rem; right: 0.75rem;');
 	let isMapHovered = $state(false);
 	let cornerPosition = $state<'left' | 'right'>('right');
 	let canHover = $state(false);
+	let isMobile = $state(false);
+	let isCollapsed = $state(false);
 	let isDragging = false;
 
+	const ZOOM_TO = 8;
+	const ZOOM_ENABLED = false;
+
 	let draggableEl: HTMLDivElement;
+	let mapEl: HTMLDivElement;
+	let marker: google.maps.marker.AdvancedMarkerElement | null = null;
+	let map: google.maps.Map | undefined;
 
 	function handlePointerMove(event: PointerEvent) {
-		if (isDragging) {
-			const rect = draggableEl.getBoundingClientRect();
-			posX = event.clientX - rect.width / 2;
-			posY = event.clientY - rect.height / 2;
-		}
+		if (!isDragging) return;
+		const rect = draggableEl.getBoundingClientRect();
+		posX = event.clientX - rect.width / 2;
+		posY = event.clientY - rect.height / 2;
 	}
 
 	function handlePointerUp() {
 		if (!isDragging) return;
 		isDragging = false;
-
 		const rect = draggableEl.getBoundingClientRect();
-		const currentWindowWidth = window.innerWidth;
-		const currentWindowHeight = window.innerHeight;
-		const middlePoint = currentWindowWidth / 2;
-
-		// Determine snap position based on current x position
+		const middlePoint = window.innerWidth / 2;
 		if (posX + rect.width / 2 < middlePoint) {
-			// Snap to bottom-left
 			posX = -1;
 			style = 'bottom: 0.75rem; left: 0.75rem;';
 			cornerPosition = 'left';
 		} else {
-			// Snap to bottom-right
 			posX = -1;
 			style = 'bottom: 0.75rem; right: 0.75rem;';
 			cornerPosition = 'right';
 		}
-
-		// Always snap to the bottom of the screen
-		posY = currentWindowHeight - rect.height;
 	}
 
 	function handlePointerDown(event: PointerEvent) {
@@ -71,84 +72,83 @@
 		isDragging = true;
 	}
 
-	let marker: google.maps.marker.AdvancedMarkerElement | null = null;
-	let map: google.maps.Map | undefined;
+	function fitToBBox() {
+		if (map === undefined) return;
+		const bounds = new google.maps.LatLngBounds();
+		bounds.extend({ lat: boundaryBox[1], lng: boundaryBox[0] });
+		bounds.extend({ lat: boundaryBox[3], lng: boundaryBox[2] });
+		map.fitBounds(bounds);
+	}
 
-	onMount(async () => {
+	function toggleCollapsed() {
+		if (!isMobile) return;
+		isCollapsed = !isCollapsed;
+	}
+
+	onMount(() => {
 		canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+		const mobileQuery = window.matchMedia('(max-width: 768px)');
+		const onMobile = (matches: boolean) => {
+			isMobile = matches;
+			if (!matches) isCollapsed = false;
+		};
+		onMobile(mobileQuery.matches);
+		const onMobileChange = (event: MediaQueryListEvent) => onMobile(event.matches);
+		mobileQuery.addEventListener('change', onMobileChange);
 
-		const { AdvancedMarkerElement } = await google.maps.importLibrary('marker') as google.maps.MarkerLibrary;
-		map = new google.maps.Map(document.getElementById('map') as HTMLElement, {
-			center: { lat: 0.000, lng: 0.000 },
-			zoom: 1,
-			mapId: env.PUBLIC_GOOGLE_MAPS_MARKER_MAP_ID,
-			mapTypeControl: false,
-			streetViewControl: false,
-			fullscreenControl: true,
-			zoomControl: true
-		});
-		if (roundType === 1 && showGeojson) {
-			map.data.loadGeoJson('/OB.geojson');
-			map.data.setStyle({ clickable: false });
-		}
-		fitToBBox();
+		const initMap = async () => {
+			const { AdvancedMarkerElement } = await google.maps.importLibrary('marker') as google.maps.MarkerLibrary;
+			map = new google.maps.Map(mapEl, {
+				center: { lat: 0, lng: 0 },
+				zoom: 1,
+				mapId: env.PUBLIC_GOOGLE_MAPS_MARKER_MAP_ID,
+				mapTypeControl: false,
+				streetViewControl: false,
+				fullscreenControl: true,
+				zoomControl: true
+			});
+			if (roundType === 1 && showGeojson) {
+				map.data.loadGeoJson('/OB.geojson');
+				map.data.setStyle({ clickable: false });
+			}
+			fitToBBox();
 
-		// Keep timer card visible both in and outside fullscreen map mode.
-		const mapChild = document.getElementById('map')!.firstChild;
-		mapChild?.addEventListener('fullscreenchange', () => {
-			const isExiting = document.fullscreenElement === null;
-			const timer = document.getElementById('map-results-timer-child');
-			const nonFS = document.getElementById('map-results-timer');
-			if (timer === null) return;
-			if (isExiting) {
-				nonFS!.appendChild(timer);
-			} else {
-				mapChild.appendChild(timer);
-			}
-		});
+			map.addListener('click', async (e: google.maps.MapMouseEvent) => {
+				if (locked || isCollapsed) return;
+				if (marker == null) {
+					marker = new AdvancedMarkerElement({ map, position: e.latLng });
+				} else {
+					marker.position = e.latLng;
+				}
+				map!.panTo(e.latLng!);
+				if (map!.getZoom()! < ZOOM_TO && ZOOM_ENABLED) map!.setZoom(ZOOM_TO);
+				const fd = new FormData();
+				fd.append('lat', e.latLng!.lat().toString());
+				fd.append('lng', e.latLng!.lng().toString());
+				await fetch(`/round/${roundId}/guess`, { body: fd, method: 'POST' });
+			});
+		};
 
-		map.addListener('click', async (e: google.maps.MapMouseEvent) => {
-			if (locked) return;
-			if (marker == null) {
-				marker = new AdvancedMarkerElement({
-					map,
-					position: e.latLng
-				});
-			} else {
-				marker.position = e.latLng;
-			}
-			map!.panTo(e.latLng!);
-			if (map!.getZoom()! < ZOOM_TO && ZOOM_ENABLED) {
-				map!.setZoom(ZOOM_TO);
-			}
-			let fd = new FormData();
-			fd.append('lat', e.latLng!.lat().toString());
-			fd.append('lng', e.latLng!.lng().toString());
-			await fetch(`/round/${roundId}/guess`, { body: fd, method: 'POST' });
-		});
+		void initMap();
+
+		return () => {
+			mobileQuery.removeEventListener('change', onMobileChange);
+		};
 	});
 
 	$effect(() => {
 		if (map === undefined || marker === null) return;
-		console.log('guess', guess);
 		marker.position = guess;
 		map.panTo(guess);
-		if (map.getZoom()! < ZOOM_TO && ZOOM_ENABLED) {
-			map.setZoom(ZOOM_TO);
-		}
+		if (map.getZoom()! < ZOOM_TO && ZOOM_ENABLED) map.setZoom(ZOOM_TO);
 	});
 
-	function fitToBBox() {
-		const bounds = new google.maps.LatLngBounds();
-		console.log('bbox', boundaryBox);
-		bounds.extend({ lat: boundaryBox[1], lng: boundaryBox[0] });
-		bounds.extend({ lat: boundaryBox[3], lng: boundaryBox[2] });
-		map!.fitBounds(bounds);
-	}
+	$effect(() => {
+		if (map === undefined || isCollapsed) return;
+		setTimeout(() => google.maps.event.trigger(map!, 'resize'), 0);
+	});
 
-	// reset za novo rundo
-	roundResults.subscribe((value) => {
-		console.log('round results draggable', value, map, marker);
+	roundResults.subscribe(() => {
 		if (map === undefined || marker === null) return;
 		fitToBBox();
 		marker.map = null;
@@ -162,6 +162,7 @@
 	class="draggable"
 	class:draggable-size-m={roundType === 1}
 	class:draggable-size-s={roundType !== 1}
+	class:draggable-collapsed={isCollapsed}
 	class:draggable-expanded-left={canHover && isMapHovered && cornerPosition === 'left'}
 	class:draggable-expanded-right={canHover && isMapHovered && cornerPosition === 'right'}
 	style={posX !== -1 ? `left: ${posX}px; top: ${posY}px` : style}
@@ -171,100 +172,160 @@
 	id="draggable-element"
 	role="button"
 	tabindex="0">
-	<div
-		class="handle"
-		onpointerdown={handlePointerDown}
-		role="button"
-		tabindex="0">
-		Geolocate
+	<div class="handle" onpointerdown={handlePointerDown} role="button" tabindex="0">Geolocate</div>
+
+	<div bind:this={mapEl} id="map" class:map-collapsed={isCollapsed} onpointerenter={() => (isMapHovered = true)} onpointerleave={() => (isMapHovered = false)}></div>
+
+	<div class="bottom-row" class:bottom-row-collapsed={isCollapsed}>
+		<div class="timer-block">
+			<div class="timer-title">{#if $time !== null}Time remaining ({$time.time}s) - {roundNumber}/{totalRounds}{:else}Waiting for timer...{/if}</div>
+			<div class="timer-subtitle">{#if isTournament}Tournament game{:else}Friendly game{/if}</div>
+			{#if $time !== null}
+				<Progress value={($time.time * 100) / startTime} />
+			{/if}
+		</div>
+
+		<div class="actions">
+			{#if !locked}
+				<Button onclick={async () => {
+					if (marker === null) return;
+					locked = true;
+					await fetch(`/round/${roundId}/guessLock`, { method: 'POST' });
+				}}>Lock in</Button>
+			{/if}
+			{#if isMobile}
+				<Button variant="outline" size="sm" onclick={toggleCollapsed}>{#if isCollapsed}Open map{:else}Collapse{/if}</Button>
+			{/if}
+		</div>
 	</div>
-	<div
-		id="map"
-		onpointerenter={() => (isMapHovered = true)}
-		onpointerleave={() => (isMapHovered = false)}></div>
-	{#if !locked}
-		<Button onclick={async () => {
-			if (marker === null) return;
-			locked = true;
-			await fetch(`/round/${roundId}/guessLock`, {method: "POST"})
-		}} class="m-2 w-auto self-end sm:w-auto">Lock in
-		</Button>
-	{/if}
 </div>
 
 <style>
-    .draggable .handle {
-        background-color: darkblue;
-        color: white;
-        padding: 10px;
-        cursor: grab; /* Indicate draggable area */
-        user-select: none; /* Prevent text selection while dragging */
+	.draggable .handle {
+		background-color: darkblue;
+		color: white;
+		padding: 10px;
+		cursor: grab;
+		user-select: none;
 		touch-action: none;
-    }
+	}
 
-    .draggable-size-s {
+	.bottom-row {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+		padding: 0.5rem;
+		border-top: 1px solid rgba(255, 255, 255, 0.14);
+		background-color: rgba(24, 28, 36, 0.95);
+	}
+
+	.bottom-row-collapsed {
+		border-top: none;
+	}
+
+	.timer-block {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		min-width: 0;
+	}
+
+	.timer-title {
+		font-size: 0.85rem;
+		font-weight: 600;
+		color: #f4f7ff;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.timer-subtitle {
+		font-size: 0.75rem;
+		color: #c8cfdb;
+	}
+
+	.actions {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.draggable-size-s {
 		width: min(92vw, 500px);
 		height: min(55vh, 400px);
-    }
+	}
 
-    .draggable-size-m {
+	.draggable-size-m {
 		width: min(92vw, 600px);
 		height: min(60vh, 500px);
-    }
+	}
 
-    .draggable-size-s.draggable-expanded-right {
+	.draggable-size-s.draggable-expanded-right {
 		width: min(95vw, 700px);
 		height: min(70vh, 550px);
-        transform-origin: bottom right;
-    }
+		transform-origin: bottom right;
+	}
 
-    .draggable-size-m.draggable-expanded-right {
+	.draggable-size-m.draggable-expanded-right {
 		width: min(95vw, 800px);
 		height: min(75vh, 650px);
-        transform-origin: bottom right;
-    }
+		transform-origin: bottom right;
+	}
 
-    .draggable-size-s.draggable-expanded-left {
+	.draggable-size-s.draggable-expanded-left {
 		width: min(95vw, 700px);
 		height: min(70vh, 550px);
-        transform-origin: bottom left;
-    }
+		transform-origin: bottom left;
+	}
 
-    .draggable-size-m.draggable-expanded-left {
+	.draggable-size-m.draggable-expanded-left {
 		width: min(95vw, 800px);
 		height: min(75vh, 650px);
-        transform-origin: bottom left;
-    }
+		transform-origin: bottom left;
+	}
 
-    .draggable {
-        z-index: 10;
-        position: absolute;
-        background-color: lightblue;
-        cursor: default; /* Default cursor for the whole div */
-        display: flex;
-        flex-direction: column;
-        transition: width 0.2s ease, height 0.2s ease;
+	.draggable {
+		z-index: 10;
+		position: absolute;
+		background-color: lightblue;
+		cursor: default;
+		display: flex;
+		flex-direction: column;
+		transition: width 0.2s ease, height 0.2s ease;
 		max-width: calc(100vw - 1.5rem);
 		max-height: calc(100vh - 1.5rem);
-    }
+	}
 
-    .draggable .handle:active {
-        cursor: grabbing;
-    }
+	.draggable .handle:active {
+		cursor: grabbing;
+	}
 
-    #map {
-        flex: 1;
-        height: auto;
-        width: 100%; /* The width is the width of the web page */
-    }
+	#map {
+		flex: 1;
+		height: auto;
+		width: 100%;
+		min-height: 190px;
+	}
+
+	.map-collapsed {
+		height: 0 !important;
+		min-height: 0 !important;
+		flex: 0 0 auto;
+		overflow: hidden;
+		pointer-events: none;
+	}
 
 	@media (max-width: 768px) {
 		.draggable {
-			left: 0.5rem !important;
-			right: 0.5rem !important;
-			bottom: 0.5rem !important;
+			left: 0 !important;
+			right: 0 !important;
+			bottom: 0 !important;
 			width: auto;
 			max-width: none;
+			border-radius: 0;
 		}
 
 		.draggable-size-s,
@@ -275,6 +336,20 @@
 		.draggable-size-m.draggable-expanded-left {
 			width: 100%;
 			height: min(48vh, 420px);
+		}
+
+		.draggable.draggable-collapsed {
+			height: auto !important;
+			min-height: 0;
+		}
+
+		.bottom-row {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.actions {
+			justify-content: flex-start;
 		}
 	}
 </style>

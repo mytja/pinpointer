@@ -4,8 +4,6 @@
 	import StreetView from './StreetView.svelte';
 	import { source } from 'sveltekit-sse';
 	import { Button } from '$lib/components/ui/button';
-	import * as Card from '$lib/components/ui/card';
-	import { Progress } from '$lib/components/ui/progress';
 	import { writable } from 'svelte/store';
 	import ResultsMap from './ResultsMap.svelte';
 	import { onMount } from 'svelte';
@@ -54,6 +52,7 @@
 	);
 
 	let hideRoundDetails: boolean = $state(true);
+	let showPlayers = $state(true);
 
 	time.subscribe((value) => {
 		if (value === null) return;
@@ -84,6 +83,7 @@
 		console.log("Round details");
 		if (!newRound(value)) return;
 		hideRoundDetails = true;
+		showPlayers = true;
 		roundNumber = value.round;
 		totalRounds = value.totalRounds;
 	});
@@ -92,6 +92,7 @@
 		console.log("New flag", value);
 		if (!newRound(value)) return;
 		hideRoundDetails = true;
+		showPlayers = true;
 		roundNumber = value.round;
 		totalRounds = value.totalRounds;
 	});
@@ -107,14 +108,22 @@
 	let loadedGoogleMaps = $state(false);
 	let reset = writable<number>(0);
 
-	onMount(async () => {
-		const loader = new Loader({
-			apiKey: env.PUBLIC_GOOGLE_MAPS_SDK_KEY ?? '',
-			version: 'weekly'
-		});
-		await loader.importLibrary('maps') as google.maps.MapsLibrary;
-		await loader.importLibrary('marker') as google.maps.MarkerLibrary;
-		loadedGoogleMaps = true;
+	function resetStreetView() {
+		reset.set($reset + 1);
+	}
+
+	onMount(() => {
+		const loadMaps = async () => {
+			const loader = new Loader({
+				apiKey: env.PUBLIC_GOOGLE_MAPS_SDK_KEY ?? '',
+				version: 'weekly'
+			});
+			await loader.importLibrary('maps') as google.maps.MapsLibrary;
+			await loader.importLibrary('marker') as google.maps.MarkerLibrary;
+			loadedGoogleMaps = true;
+		};
+
+		void loadMaps();
 	});
 </script>
 
@@ -134,32 +143,35 @@
 	<ResultsMap isOwner={data.isOwner} roundResults={$roundResults} hideRoundDetails={hideRoundDetails}
 							roundId={data.roundId} roundNumber={roundNumber} roundCount={totalRounds} roundType={data.roundType} />
 	<div class="map-page">
-		<div id="map-results-timer">
-			<div id="map-results-timer-child" class="timer-card-wrapper">
-				{#if $time !== null}
-					<Card.Root style={($time.time * 100) / data.startTime <= 15 ? "border-color: red; border-width: 5px;" : ""}>
-						<Card.Header>
-							<Card.Title>Time remaining ({$time.time}s) – {roundNumber}/{totalRounds}</Card.Title>
-							<Card.Description>
-								{#if data.isTournament}Tournament game{:else}Friendly game{/if}
-								<Progress value={($time.time * 100) / data.startTime} />
-							</Card.Description>
-							<Card.Content>
-								{#each $clients as client}
-										<b style={client.locked ? "color: green;" : ""}>@{client.username}</b> – {client.score}<br>
-								{/each}
-								<br>
-								{#if data.roundType !== 1}
-									<Button onclick={() => reset.set($reset++)}>Pojdi nazaj na prvotno pozicijo</Button>
-								{/if}
-							</Card.Content>
-						</Card.Header>
-					</Card.Root>
-				{/if}
-			</div>
+		<div class="map-top-navbar">
+			<Button variant="outline" size="sm" onclick={() => (showPlayers = !showPlayers)}>
+				{#if showPlayers}Hide results{:else}Show results{/if}
+			</Button>
+			{#if data.roundType !== 1}
+				<Button variant="outline" size="sm" onclick={resetStreetView}>Return to the starting position</Button>
+			{/if}
 		</div>
+		{#if showPlayers}
+			<div class="page-results">
+				{#each $clients as client}
+					<b style={client.locked ? 'color: green;' : ''}>@{client.username}</b> - {client.score}<br>
+				{/each}
+			</div>
+		{/if}
 		<StreetView roundDetails={roundDetails} newFlag={newFlag} roundType={data.roundType} reset={reset} canMove={data.canMove} canRotate={data.canRotate} canZoom={data.canZoom} locationName={locationName} />
-		<DraggableMap roundId={data.roundId} guess={$guess} roundResults={roundResults} boundaryBox={data.boundaryBox} roundType={data.roundType} showGeojson={data.showGeojson} />
+		<DraggableMap
+			roundId={data.roundId}
+			guess={$guess}
+			roundResults={roundResults}
+			boundaryBox={data.boundaryBox}
+			roundType={data.roundType}
+			showGeojson={data.showGeojson}
+			time={time}
+			isTournament={data.isTournament}
+			startTime={data.startTime}
+			roundNumber={roundNumber}
+			totalRounds={totalRounds}
+		/>
 	</div>
 {:else}
 	<div class="p-4 sm:p-6">
@@ -188,27 +200,70 @@
 <style>
     .map-page {
         flex: 1;
-        height: auto;
+		height: 100%;
         display: flex;
         flex-direction: column;
 		position: relative;
-		min-height: calc(100dvh - 64px);
+		min-height: 0;
+		overflow: hidden;
 	}
 
-	.timer-card-wrapper {
+	/* Route-scoped viewport lock: prevent vertical page growth from header + map overlays. */
+	:global(.app) {
+		height: 100dvh;
+		min-height: 100dvh;
+		overflow: hidden;
+	}
+
+	:global(main) {
+		overflow: hidden;
+	}
+
+	.map-top-navbar {
 		position: absolute;
-		top: 50px;
-		right: 8px;
-		z-index: 10;
-		width: min(320px, calc(100vw - 16px));
+		top: 0.5rem;
+		left: 0.5rem;
+		right: 0.5rem;
+		z-index: 12;
+		display: flex;
+		gap: 0.5rem;
+		justify-content: space-between;
+		flex-wrap: wrap;
+	}
+
+	.page-results {
+		position: absolute;
+		top: 3.5rem;
+		left: 0.5rem;
+		right: 0.5rem;
+		z-index: 16;
+		max-height: 110px;
+		overflow: auto;
+		padding: 0.9rem 1rem;
+		border-radius: 0.5rem;
+		background: hsl(var(--background) / 0.98);
+		border: 1px solid hsl(var(--border));
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+		color: hsl(var(--foreground));
 	}
 
 	@media (max-width: 768px) {
-		.timer-card-wrapper {
-			top: 8px;
-			left: 8px;
-			right: 8px;
-			width: auto;
+		.map-top-navbar {
+			position: absolute;
+			top: 0.5rem;
+			left: 0.5rem;
+			right: 0.5rem;
+			z-index: 14;
+		}
+
+		.page-results {
+			position: absolute;
+			top: 3.5rem;
+			left: 0.5rem;
+			right: 0.5rem;
+			z-index: 16;
+			max-height: 100px;
+			padding: 0.75rem;
 		}
     }
 </style>
