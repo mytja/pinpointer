@@ -3,7 +3,7 @@
 	import { Button } from '$lib/components/ui/button';
 </script>
 
-<div style="padding: 20px">
+<div class="p-4 sm:p-6">
 	<section>
 		<form method="POST">
 			<h1 class="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">

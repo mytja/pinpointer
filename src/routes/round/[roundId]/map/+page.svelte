@@ -207,7 +207,7 @@
 	</div>
 {:else}
 	<div class="p-4 sm:p-6">
-		<section>
+		<section class="mx-auto w-full max-w-screen-lg">
 			<h2 class="scroll-m-20 text-3xl font-bold tracking-tight">Waiting for start</h2>
 			{#if !data.isTournament}
 				Invite your friends with this code: <span class="text-2xl font-bold text-muted-foreground sm:text-3xl">{data.roundId}</span>

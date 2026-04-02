@@ -184,7 +184,7 @@
 				<span class="text-2xl sm:text-3xl">Results ({roundNumber}/{roundCount})</span>
 				{#if roundType === 1}
 					<br>
-					<span class="text-xl font-bold sm:text-2xl">Obcina {munSol}</span>
+					<span class="text-xl font-bold sm:text-2xl">Občina {munSol}</span>
 				{/if}
 				<br><br>
 				<div class="results-table">

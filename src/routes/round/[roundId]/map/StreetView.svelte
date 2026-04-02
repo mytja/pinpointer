@@ -58,7 +58,7 @@
 
 {#if roundType === 1}
 	<div class="municipality-view">
-		<span class="text-center text-2xl">Poisci obcinsko hiso slovenske obcine<br>z naslednjim grbom</span>
+		<span class="text-center text-2xl">Poišči občinsko hišo slovenske občine<br>z naslednjim grbom</span>
 		{#if $locationName !== undefined && $locationName !== ""}
 			<span class="location-name">{$locationName.replaceAll("   ", '\n')}</span>
 		{/if}
