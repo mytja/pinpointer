@@ -4,7 +4,7 @@
 </script>
 
 <div class="p-4 sm:p-6">
-	<section>
+	<section class="mx-auto w-full max-w-screen-lg">
 		<form method="POST">
 			<h1 class="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
 				Login into Pinpointer

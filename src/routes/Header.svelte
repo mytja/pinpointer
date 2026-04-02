@@ -18,7 +18,7 @@
     <a href="/" class="flex min-w-0 items-center gap-2">
       <MapPin class="h-6 w-6 shrink-0" />
       <span class="truncate text-xl font-semibold sm:text-2xl">Pinpointer</span>
-      <span class="hidden text-sm text-muted-foreground sm:inline">v1.0.2</span>
+      <span class="hidden text-sm text-muted-foreground sm:inline">v1.0.3</span>
     </a>
 
     <div class="ml-auto flex items-center gap-2">

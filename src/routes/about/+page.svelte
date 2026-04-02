@@ -16,7 +16,7 @@
 		</div>
 		<p class="text-base sm:text-lg">A system for geoguessing tournament organization.</p>
 		<p class="mt-4 text-sm sm:text-base">
-			Copyright 2024-2025 Mitja Severkar. All rights reserved. Licensed under AGPLv3.
+			Copyright 2024-2026 Mitja Ševerkar. All rights reserved. Licensed under AGPLv3.
 			Source code is available on <a href="https://github.com/mytja/pinpointer" class="text-cyan-600 underline underline-offset-2">GitHub</a>.
 		</p>
 	</section>
