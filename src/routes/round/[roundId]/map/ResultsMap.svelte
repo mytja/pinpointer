@@ -1,10 +1,12 @@
 <script lang="ts">
 	/* eslint-disable no-undef */
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import type { RoundResult } from './types';
 	import { Button } from '$lib/components/ui/button';
 	import sanitizeHtml from 'sanitize-html';
 	import { env } from '$env/dynamic/public';
+	import { flip } from 'svelte/animate';
+	import { cubicOut } from 'svelte/easing';
 
 	interface MyProps {
 		isOwner: boolean;
@@ -20,7 +22,60 @@
 
 	let markers: google.maps.marker.AdvancedMarkerElement[] = [];
 	let map: google.maps.Map | undefined;
-	let results = $state<RoundResult[] | null>([]); // svelte 5 fucking hackery
+	let sortedResults = $state<RoundResult[]>([]);
+	const totalScoreValues = $state<Record<string, number>>({});
+	const addedScoreValues = $state<Record<string, number>>({});
+	const totalScoreRafs = new Map<string, number>();
+	const addedScoreRafs = new Map<string, number>();
+
+	function scoreDuration(score: number) {
+		const clamped = Math.max(0, Math.min(5000, Math.abs(score)));
+		return Math.min(2500, 250 + clamped * 0.30);
+	}
+
+	function animateScore(
+		valuesStore: Record<string, number>,
+		rafStore: Map<string, number>,
+		key: string,
+		fromValue: number,
+		toValue: number,
+		duration: number
+	) {
+		const existing = rafStore.get(key);
+		if (existing !== undefined) {
+			cancelAnimationFrame(existing);
+		}
+		if (fromValue === toValue) {
+			valuesStore[key] = toValue;
+			rafStore.delete(key);
+			return;
+		}
+		const start = performance.now();
+		const step = (now: number) => {
+			const progress = Math.min(1, (now - start) / duration);
+			const eased = cubicOut(progress);
+			valuesStore[key] = Math.round(fromValue + (toValue - fromValue) * eased);
+			if (progress < 1) {
+				rafStore.set(key, requestAnimationFrame(step));
+			} else {
+				rafStore.delete(key);
+			}
+		};
+		rafStore.set(key, requestAnimationFrame(step));
+	}
+
+	function scoreColor(score: number) {
+		const clamped = Math.max(0, Math.min(5000, score));
+		const ratio = clamped / 5000;
+		const hue = Math.round(ratio * 120);
+		return `hsl(${hue}, 70%, 45%)`;
+	}
+
+	function formatDistance(distance: number) {
+		if (distance === -1) return 'No guess';
+		if (distance >= 1000) return `${Math.round(distance / 100) / 10} km`;
+		return `${Math.round(distance * 100) / 100} m`;
+	}
 
 	onMount(async () => {
 		map = new google.maps.Map(document.getElementById('results-map') as HTMLElement, {
@@ -40,8 +95,6 @@
 	let munSol = $state("");
 	$effect(() => {
 		console.log("Updating markers", roundResults, map);
-		roundResults = roundResults;
-		results = JSON.parse(JSON.stringify(roundResults));
 
 		if (map === undefined || roundResults === null) return;
 
@@ -112,15 +165,40 @@
 			bounds.extend(marker.position);
 		}
 		map!.fitBounds(bounds);
+
+		const nextSortedResults = (roundResults ?? [])
+			.filter((roundResult) => roundResult.userId !== 'solution')
+			.sort((a, b) => b.newScore - a.newScore);
+		sortedResults = nextSortedResults;
+
+		untrack(() => {
+			for (const roundResult of nextSortedResults) {
+				const totalFrom = totalScoreValues[roundResult.userId] ?? roundResult.scoreBefore;
+				const totalTo = roundResult.newScore;
+				animateScore(
+					totalScoreValues,
+					totalScoreRafs,
+					roundResult.userId,
+					totalFrom,
+					totalTo,
+					scoreDuration(Math.abs(totalTo - totalFrom))
+				);
+				const addedFrom = addedScoreValues[roundResult.userId] ?? 0;
+				const addedTo = roundResult.addedScore;
+				animateScore(
+					addedScoreValues,
+					addedScoreRafs,
+					roundResult.userId,
+					addedFrom,
+					addedTo,
+					scoreDuration(Math.abs(addedTo))
+				);
+			}
+		});
 	});
 </script>
 
 <style>
-	table {
-      table-layout: fixed;
-			text-align: center;
-	}
-
 	.results-shell {
 		display: flex;
 		justify-content: center;
@@ -152,6 +230,19 @@
 
 	.results-table {
 		overflow-x: auto;
+		overflow-y: auto;
+		max-height: 55vh;
+		padding-right: 6px;
+	}
+
+	.result-card {
+		border-radius: 14px;
+	}
+
+	.rank-badge {
+		min-width: 40px;
+		height: 40px;
+		border-radius: 999px;
 	}
 
 	@media (min-width: 1024px) {
@@ -172,6 +263,10 @@
 		.results-side {
 			height: 85vh;
 		}
+
+		.results-table {
+			max-height: 75vh;
+		}
 	}
 </style>
 
@@ -188,38 +283,53 @@
 				{/if}
 				<br><br>
 				<div class="results-table">
-					<table class="striped w-full min-w-[700px]">
-					<thead>
-					<tr>
-						<th scope="col">Username</th>
-						<th scope="col">Distance</th>
-						{#if roundType === 1}
-							<th scope="col">Municipality</th>
+					<div class="grid gap-3">
+						{#if sortedResults.length > 0}
+							{#each sortedResults as roundResult, index (roundResult.userId)}
+								<div
+									class="result-card border border-border/60 bg-card/60 p-4 shadow-sm backdrop-blur"
+									animate:flip={{ duration: 1000 }}
+								>
+									<div class="flex flex-wrap items-center justify-between gap-4">
+										<div class="flex items-center gap-3">
+											<div class="rank-badge grid place-items-center bg-muted text-sm font-semibold text-muted-foreground">
+												#{index + 1}
+											</div>
+											<div>
+												<div class="text-lg font-semibold">@{roundResult.username}</div>
+												<div class="text-xs text-muted-foreground">Distance: {formatDistance(roundResult.distance)}</div>
+											</div>
+										</div>
+										<div class="text-right">
+											<div class="text-xs uppercase tracking-wide text-muted-foreground">Total</div>
+											<div class="text-2xl font-bold">
+												{Math.round(totalScoreValues[roundResult.userId] ?? roundResult.newScore)}
+											</div>
+										</div>
+									</div>
+									<div class="mt-4 grid gap-3 sm:grid-cols-2">
+										<div class="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-sm">
+											Score before: <span class="font-semibold">{roundResult.scoreBefore}</span>
+										</div>
+										<div class="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-sm">
+											Points: <span class="font-semibold" style={`color: ${scoreColor(Math.abs(roundResult.addedScore))}`}>
+												{roundResult.addedScore >= 0 ? '+' : ''}{Math.round(addedScoreValues[roundResult.userId] ?? roundResult.addedScore)}
+											</span>
+										</div>
+										{#if roundType === 1}
+											<div class="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-sm sm:col-span-2">
+												Municipality: <span class="font-semibold">{roundResult.municipality}</span>
+											</div>
+										{/if}
+									</div>
+								</div>
+							{/each}
+						{:else}
+							<div class="rounded-lg border border-border/60 bg-muted/20 px-3 py-4 text-sm text-muted-foreground">
+								No results yet.
+							</div>
 						{/if}
-						<th scope="col">Score before</th>
-						<th scope="col">Points received</th>
-						<th scope="col">Total points</th>
-					</tr>
-					</thead>
-					<tbody>
-					{#if results !== null}
-						{#each results as roundResult}
-							{#if roundResult.userId !== 'solution'}
-								<tr>
-									<th scope="row">@{roundResult.username}</th>
-									<td>{#if roundResult.distance === -1}❌{:else}{Math.round(roundResult.distance * 100) / 100} m{/if}</td>
-									{#if roundType === 1}
-										<td>{roundResult.municipality}</td>
-									{/if}
-									<td>{roundResult.scoreBefore}</td>
-									<td>{roundResult.addedScore}</td>
-									<td>{roundResult.newScore}</td>
-								</tr>
-							{/if}
-						{/each}
-					{/if}
-					</tbody>
-					</table>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -231,7 +341,7 @@
 			</Button>
 		{:else}
 			<div style="height: 12px;"></div>
-			Waiting for host to start new round!
+			Waiting for the host to start new round!
 		{/if}
 	</div>
 </div>
